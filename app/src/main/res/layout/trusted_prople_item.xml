@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:background="@android:color/transparent"
+    android:orientation="vertical">
+
+       <androidx.constraintlayout.widget.ConstraintLayout
+           android:padding="@dimen/_5sdp"
+           android:layout_width="wrap_content"
+           android:layout_height="wrap_content">
+
+           <de.hdodenhof.circleimageview.CircleImageView
+               android:id="@+id/listContact"
+               android:layout_width="@dimen/_50sdp"
+               android:layout_height="@dimen/_50sdp"
+               android:layout_gravity="center"
+               android:src="@drawable/ic_man"
+               app:civ_border_width="@dimen/_2sdp"
+               app:layout_constraintBottom_toBottomOf="parent"
+               app:layout_constraintEnd_toEndOf="parent"
+               app:layout_constraintStart_toStartOf="parent"
+               app:layout_constraintTop_toTopOf="parent" />
+
+           <de.hdodenhof.circleimageview.CircleImageView
+               android:id="@+id/contactImage"
+               android:layout_width="@dimen/_15sdp"
+               android:layout_height="@dimen/_15sdp"
+               android:layout_gravity="center"
+               android:src="#32453B"
+               app:civ_border_width="@dimen/_2sdp"
+               app:layout_constraintBottom_toBottomOf="@+id/listContact"
+               app:layout_constraintEnd_toEndOf="@+id/listContact"
+               app:layout_constraintHorizontal_bias="0.95"
+               app:layout_constraintStart_toStartOf="@+id/listContact"
+               app:layout_constraintTop_toTopOf="@+id/listContact"
+               app:layout_constraintVertical_bias="0.97" />
+       </androidx.constraintlayout.widget.ConstraintLayout>
+        <TextView
+            android:padding="@dimen/_5sdp"
+            android:id="@+id/trusted_Name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="name"
+            android:textColor="@color/white"
+            android:textSize="@dimen/_12ssp" />
+
+
+
+
+</LinearLayout>
+
+<!---->
+
+
+

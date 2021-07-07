@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android" >
+    <item>
+        <shape android:shape="rectangle" >
+            <corners android:topLeftRadius="@dimen/_200sdp"
+                android:topRightRadius="@dimen/_200sdp"
+                android:bottomLeftRadius="@dimen/_200sdp"
+                android:bottomRightRadius="@dimen/_200sdp"/>
+            <solid android:color="#F3F3F3" />
+        </shape>
+    </item>
+    <item android:top="@dimen/_25sdp">
+        <shape android:shape="rectangle" >
+            <corners android:bottomLeftRadius="@dimen/_200sdp"
+                android:bottomRightRadius="@dimen/_200sdp"/>
+            <solid android:color="@color/bikeLogo"/>
+        </shape>
+    </item>
+</layer-list>

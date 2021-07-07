@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "465192037003",
+    "project_id": "life-tracker-908da",
+    "storage_bucket": "life-tracker-908da.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:465192037003:android:47fcfbd194ef75a235828e",
+        "android_client_info": {
+          "package_name": "com.rex.lifetracker"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "465192037003-8i07hep1b8thi5ke0leu1g67d317jkf2.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAHc91LstCrYtK3w9RdPwoe1lqcN1Gpwig"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "465192037003-8i07hep1b8thi5ke0leu1g67d317jkf2.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

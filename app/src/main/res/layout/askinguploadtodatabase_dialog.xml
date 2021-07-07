@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAlignment="center"
+        android:text="Do you want to upload to online database? Because you have wifi connected"
+        android:textStyle="bold"
+        android:textColor="@color/RED"
+        android:textSize="@dimen/_15ssp"
+        android:layout_gravity="center"
+        android:padding="@dimen/_10sdp"/>
+
+    <Space
+        android:layout_width="0dp"
+        android:layout_height="@dimen/_20sdp"/>
+
+    <LinearLayout
+        android:padding="@dimen/_10sdp"
+        android:layout_gravity="center"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Cancel"
+            android:id="@+id/cancelupload"/>
+        <Space
+            android:layout_width="@dimen/_50sdp"
+            android:layout_height="0dp"/>
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="OK"
+            android:id="@+id/okDownload"/>
+
+    </LinearLayout>
+
+    <Space
+        android:layout_width="0dp"
+        android:layout_height="@dimen/_20sdp"/>
+
+</LinearLayout>

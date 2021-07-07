@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="purple_200">#FFBB86FC</color>
+    <color name="purple_500">#FF6200EE</color>
+    <color name="purple_700">#FF3700B3</color>
+    <color name="teal_200">#FF03DAC5</color>
+    <color name="teal_700">#FF018786</color>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+
+    <color name="Nav_Item_color">#1E2E33</color>
+    <color name="UnselectedButton">#446456</color>
+    <color name="SelectedButton">#F24C4A</color>
+    <color name="SheetBackground">#4094AC</color>
+    <color name="RED">#FF0623</color>
+    <color name="Sade">#E8E8E8</color>
+    <color name="language">#4BBCC4</color>
+    <color name="TextInformation">#198F9B</color>
+    <color name="status_button">#169AA9</color>
+    <color name="money">#ECC324</color>
+    <color name="Star">#73FEC2</color>
+    <color name="addBackGround">#23322D</color>
+    <color name="bikeBackground">#D1EDE5</color>
+    <color name="bikeLogo">#169AA9</color>
+    <color name="fadedBlue">#F0FFFF</color>
+    <color name="default_vector_color">#6C6C6C</color>
+</resources>

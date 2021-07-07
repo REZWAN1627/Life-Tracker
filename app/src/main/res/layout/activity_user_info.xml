@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".view.userUi.UserInfo">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <Space
+            android:layout_width="0dp"
+            android:layout_height="@dimen/_10sdp"/>
+
+        <de.hdodenhof.circleimageview.CircleImageView
+            android:layout_gravity="center"
+            android:id="@+id/UserImage"
+            android:layout_width="@dimen/_100sdp"
+            android:layout_height="@dimen/_100sdp"
+            android:src="@drawable/ic_man"
+            />
+
+        <Space
+            android:layout_width="0dp"
+            android:layout_height="@dimen/_10sdp"/>
+
+        <TextView
+            android:layout_gravity="center"
+            android:id="@+id/userGmail"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="abx@gmail.com"
+            android:textColor="@color/black"
+            android:textSize="@dimen/_16ssp"
+            android:textStyle="bold" />
+        <Space
+            android:layout_width="0dp"
+            android:layout_height="@dimen/_10sdp"/>
+
+        <LinearLayout
+            android:padding="@dimen/_10sdp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/userGmail"
+            app:layout_constraintVertical_bias="0.13">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:text="Information:"
+                android:textStyle="bold"
+                android:textSize="@dimen/_13ssp"
+                android:textColor="@color/black"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="First Name: "
+                android:padding="@dimen/_10sdp"
+                android:textColor="@color/black"/>
+            <EditText
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:hint="Enter First Name "
+                android:textColor="@color/black"
+                android:textStyle="bold"
+                android:id="@+id/userFirstName"/>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Last Name: "
+                android:padding="@dimen/_10sdp"
+                android:textColor="@color/black"/>
+            <EditText
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:hint="Enter Last Name "
+                android:textColor="@color/black"
+                android:textStyle="bold"
+                android:id="@+id/userLastName"/>
+            <Space
+                android:layout_width="0dp"
+                android:layout_height="@dimen/_20sdp"/>
+
+        </LinearLayout>
+
+        <Button
+            android:background="@drawable/shape_sign_stroke"
+            android:layout_width="@dimen/_250sdp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="Next"
+            android:textStyle="bold"
+            android:id="@+id/next"/>
+
+
+    </LinearLayout>
+
+
+
+
+</ScrollView>

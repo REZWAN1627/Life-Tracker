@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">Life Tracker</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="example2">Android software development is the process by which applications are created for devices running the Android operating system</string>
+    <string name="example">Android software development is the process by which applications are created for devices running the Android operating system. Google states that "Android apps can be written using Kotlin, Java, and C++ languages" using the Android software development kit, while using other languages is also possible.</string>
+    <string name="title_activity_maps">Map</string>
+</resources>

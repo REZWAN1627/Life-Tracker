@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/contact_nav_graph"
+    app:startDestination="@id/listContacts">
+
+    <fragment
+        android:id="@+id/listContacts"
+        android:name="com.rex.lifetracker.view.fragment.ContactsAdd.ListContacts"
+        android:label="fragment_list_contacts"
+        tools:layout="@layout/fragment_list_contacts" >
+        <action
+            android:id="@+id/action_listContacts_to_addContacts2"
+            app:destination="@id/addContacts2" />
+        <action
+            android:id="@+id/action_listContacts_to_updateContacts"
+            app:destination="@id/updateContacts" />
+    </fragment>
+    <fragment
+        android:id="@+id/addContacts2"
+        android:name="com.rex.lifetracker.view.fragment.ContactsAdd.AddContacts"
+        android:label="fragment_add_contacts"
+        tools:layout="@layout/fragment_add_contacts" >
+        <action
+            android:id="@+id/action_addContacts2_to_listContacts"
+            app:destination="@id/listContacts" />
+    </fragment>
+    <fragment
+        android:id="@+id/updateContacts"
+        android:name="com.rex.lifetracker.view.fragment.ContactsAdd.UpdateContacts"
+        android:label="fragment_update_contacts"
+        tools:layout="@layout/fragment_update_contacts" >
+        <action
+            android:id="@+id/action_updateContacts_to_listContacts"
+            app:destination="@id/listContacts" />
+        <argument
+            android:name="localData"
+            app:argType="com.rex.lifetracker.RoomDataBase.LocalDataBase_Entity.SOSContacts_Entity" />
+    </fragment>
+</navigation>

@@ -1,0 +1,84 @@
+package com.rex.lifetracker.repository.firebaseRepository
+
+import android.util.Log
+import androidx.lifecycle.MutableLiveData
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.firestore.ktx.toObject
+import com.google.firebase.ktx.Firebase
+import com.rex.lifetracker.model.FireBaseModel.UserInfoModel
+import com.rex.lifetracker.utils.Constant.TAG
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
+
+
+class UserInfoRepository {
+
+    private val firebaseAuth = Firebase.auth.currentUser?.uid
+    private val firebaseFirestore =
+        Firebase.firestore.collection("Client").document(firebaseAuth.toString())
+            .collection("Client_PersonalInfo").document("Info")
+
+    fun insertUserInfoFirebase(user: UserInfoModel): MutableLiveData<String>? {
+
+        val insertResultLiveData = MutableLiveData<String>()
+
+        GlobalScope.launch(Dispatchers.IO) {
+            try {
+                firebaseFirestore.set(user).await()
+                withContext(Dispatchers.IO) {
+                    insertResultLiveData.postValue("Insert Successfully")
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    Log.d(TAG, "insertUserInfoFirebase: exception happen ${e.message}")
+                    insertResultLiveData.postValue("failed")
+                }
+            }
+        }
+        return insertResultLiveData
+
+
+    }
+
+    fun getUserInfoFromDataBase(): MutableLiveData<UserInfoModel?> {
+
+
+
+        Log.d(TAG, "getUserInfoFromDataBase: uid $firebaseAuth")
+        val getFireStoreMutableLiveData =
+            MutableLiveData<UserInfoModel?>()
+
+        GlobalScope.launch(Dispatchers.IO) {
+            try {
+                Log.d(TAG, "getUserInfoFromDataBase: getting value")
+                val data = firebaseFirestore.get().await().toObject(UserInfoModel::class.java)
+                Log.d(TAG, "getUserInfoFromDataBase: $data")
+                withContext(Dispatchers.IO) {
+                    Log.d(TAG, "getUserInfoFromDataBase: $data")
+                    getFireStoreMutableLiveData.postValue(data)
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.IO) {
+                    Log.d(TAG, "getUserInfoFromDataBase: exception happened ${e.message}")
+                    getFireStoreMutableLiveData.postValue(
+                        UserInfoModel(
+                            "null",
+                            "null",
+                            "null",
+                            "null"
+                        )
+                    )
+                }
+
+            }
+
+        }
+        return getFireStoreMutableLiveData
+
+
+    }
+}
