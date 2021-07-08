@@ -5,7 +5,9 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.media.AudioAttributes
 import android.media.RingtoneManager
+import android.net.Uri
 import android.os.Build
+import com.rex.lifetracker.R
 import com.rex.lifetracker.utils.Constant.CHANNEL_ALERT_SYSTEM_ID
 import com.rex.lifetracker.utils.Constant.CHANNEL_ID
 
@@ -29,9 +31,13 @@ class App : Application() {
                 NotificationManager::class.java
             )
             val audioAttributes = AudioAttributes.Builder()
-                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
                 .setUsage(AudioAttributes.USAGE_ALARM)
                 .build()
+            val soundUri = Uri.parse(
+                "android.resource://"
+                        + packageName + "/" + R.raw.siren
+            )
             serviceChannel.enableVibration(true)
             serviceChannel.vibrationPattern = longArrayOf(
                 1000,
@@ -44,8 +50,9 @@ class App : Application() {
                 1000
             )
             serviceChannel.shouldVibrate()
+
             serviceChannel.setSound(
-                RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION),
+                soundUri,
                 audioAttributes
             )
             manager.createNotificationChannel(serviceChannel)

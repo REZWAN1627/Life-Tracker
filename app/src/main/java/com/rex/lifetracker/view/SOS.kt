@@ -7,7 +7,6 @@ import android.content.pm.PackageManager
 import android.database.Cursor
 import android.location.Location
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import android.provider.CallLog
 import android.telecom.PhoneAccountHandle
@@ -103,7 +102,7 @@ class SOS : AppCompatActivity() {
         telephonyManager.listen(mPhoneStateListener, PhoneStateListener.LISTEN_NONE)
 
 
-        startActivity(Intent(this, MainActivity::class.java).putExtra("Service", "YES"))
+        startActivity(Intent(this, MainActivity::class.java).putExtra("Service", "RESTART"))
         finish()
     }
 
@@ -203,28 +202,23 @@ class SOS : AppCompatActivity() {
 
     private fun checkSimSlot() {
 
-        localDataBaseViewModel.readAllSIMSlot?.observe(this, androidx.lifecycle.Observer {
+        localDataBaseViewModel.readAllSIMSlot.observe(this, {
             smsManager = if (it.isNotEmpty()) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1) {
+                simSlotFlag = true
+                val subs =
+                    getSystemService(TELEPHONY_SUBSCRIPTION_SERVICE) as SubscriptionManager
+
+                val sim = subs.getSubscriptionIds(Integer.parseInt(it[0].SELECTED_SIM_SLOT))
+                if (sim != null) {
+                    simSlotNumber = Integer.parseInt(it[0].SELECTED_SIM_SLOT)
                     simSlotFlag = true
-                    val subs =
-                        getSystemService(TELEPHONY_SUBSCRIPTION_SERVICE) as SubscriptionManager
-
-                    val sim = subs.getSubscriptionIds(Integer.parseInt(it[0].SELECTED_SIM_SLOT))
-                    if(sim != null){
-                        simSlotNumber = Integer.parseInt(it[0].SELECTED_SIM_SLOT)
-                        simSlotFlag = true
-                        val simm = sim[0]
-                        SmsManager.getSmsManagerForSubscriptionId(simm)
-                    }else{
-                        simSlotFlag = false
-                        SmsManager.getDefault()
-                    }
-
+                    val simm = sim[0]
+                    SmsManager.getSmsManagerForSubscriptionId(simm)
                 } else {
                     simSlotFlag = false
                     SmsManager.getDefault()
                 }
+
             } else {
                 simSlotFlag = false
                 SmsManager.getDefault()
@@ -312,42 +306,33 @@ class SOS : AppCompatActivity() {
                 "slotIdx"
             )
             val telecomManager =
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                    this.getSystemService(TELECOM_SERVICE) as TelecomManager
-                } else {
-                    TODO("VERSION.SDK_INT < LOLLIPOP")
-                }
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                phoneAccountHandleList = telecomManager.callCapablePhoneAccounts
-            }
+                this.getSystemService(TELECOM_SERVICE) as TelecomManager
+            phoneAccountHandleList = telecomManager.callCapablePhoneAccounts
             val intent =
                 Intent(Intent.ACTION_CALL).setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             intent.data = Uri.parse("tel:$number")
             intent.putExtra("c-om.android.phone.force.slot", true)
             intent.putExtra("Cdma_Supp", true)
+
             if (item === 0) { //for sim1
                 for (s in simSlotName) {
                     intent.putExtra(s, 0) //0 or 1 according to sim.......
                 }
                 if (phoneAccountHandleList.isNotEmpty()) {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                        intent.putExtra(
-                            "android.telecom.extra.PHONE_ACCOUNT_HANDLE",
-                            phoneAccountHandleList[0]
-                        )
-                    }
+                    intent.putExtra(
+                        "android.telecom.extra.PHONE_ACCOUNT_HANDLE",
+                        phoneAccountHandleList[0]
+                    )
                 }
             } else { //for sim2
                 for (s in simSlotName) {
                     intent.putExtra(s, 1) //0 or 1 according to sim.......
                 }
                 if (phoneAccountHandleList.isNotEmpty()) {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                        intent.putExtra(
-                            "android.telecom.extra.PHONE_ACCOUNT_HANDLE",
-                            phoneAccountHandleList[1]
-                        )
-                    }
+                    intent.putExtra(
+                        "android.telecom.extra.PHONE_ACCOUNT_HANDLE",
+                        phoneAccountHandleList[1]
+                    )
                 }
             }
             startActivity(intent)

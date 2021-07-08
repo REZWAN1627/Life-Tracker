@@ -21,9 +21,8 @@ class SystemShakeAlert_broadcastReceiver :BroadcastReceiver() {
                 val notificationManager =
                     context!!.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
                 notificationManager.cancel(2)
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    context.startForegroundService(Intent(context,MotionDetectService::class.java))
-                }
+                context.startForegroundService(Intent(context,MotionDetectService::class.java))
+
             }
         }
 

@@ -4,8 +4,6 @@ import android.Manifest
 import android.animation.ObjectAnimator
 import android.app.Dialog
 import android.content.Intent
-import android.graphics.Bitmap
-import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.ColorDrawable
 import android.net.Uri
 import android.os.Build
@@ -23,16 +21,11 @@ import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.GravityCompat
-import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.NavigationUI
 import androidx.recyclerview.widget.LinearLayoutManager
-import coil.ImageLoader
-import coil.request.ImageRequest
-import coil.request.SuccessResult
 import com.bumptech.glide.Glide
 import com.github.pwittchen.reactivenetwork.library.rx2.ReactiveNetwork
 import com.google.android.gms.auth.api.signin.GoogleSignIn
@@ -42,9 +35,7 @@ import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 import com.rex.lifetracker.R
-import com.rex.lifetracker.RoomDataBase.LocalDataBase_Entity.PersonalInfo_Entity
 import com.rex.lifetracker.RoomDataBase.LocalDataBase_Entity.SIM_Entity
-import com.rex.lifetracker.RoomDataBase.LocalDataBase_Entity.SOSContacts_Entity
 import com.rex.lifetracker.adapter.Contacts_RecyclerView
 import com.rex.lifetracker.databinding.ActivityMainBinding
 import com.rex.lifetracker.service.MotionDetectService
@@ -61,9 +52,6 @@ import dmax.dialog.SpotsDialog
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.Disposable
 import io.reactivex.schedulers.Schedulers
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.TimeUnit
@@ -89,6 +77,7 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
     private lateinit var userActiveTime: String
     private var isInternetConnected = false
     private var internetDisposable: Disposable? = null
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -124,12 +113,12 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
                         )
                     }
                     else -> {
-                        Toast.makeText(
-                            this@MainActivity,
-                            "This Feature is Coming Soon",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                        return@setOnNavigationItemSelectedListener false
+                        BottomSheetBehavior.from(bottomSheet).state =
+                            BottomSheetBehavior.STATE_HIDDEN
+                        return@setOnNavigationItemSelectedListener NavigationUI.onNavDestinationSelected(
+                            menu,
+                            navController
+                        )
                     }
                 }
             }
@@ -206,7 +195,7 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
                     )
                 )
                 finish()
-                startActivity(Intent(this@MainActivity, SignIn::class.java).putExtra("Nuke","YES"))
+                startActivity(Intent(this@MainActivity, SignIn::class.java).putExtra("Nuke", "YES"))
                 finish()
 
 
@@ -285,7 +274,7 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
             SpotsDialog.Builder().setContext(this).setTheme(R.style.Custom)
                 .setCancelable(true).build()
         dialogue?.show()
-        localDataBaseViewModel.realAllUserInfo?.observe(this, Observer {
+        localDataBaseViewModel.realAllUserInfo.observe(this, {
             if (it.isNotEmpty()) {
                 dialogue.dismiss()
                 trailCalculation(userActiveTime, it[0].Deactivate_Time)
@@ -331,6 +320,7 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
             sosActivityState = true
             stopService(Intent(this, MotionDetectService::class.java))
         } else {
+            startForegroundService(Intent(this, MotionDetectService::class.java))
             Log.e("TAG", "not calling from sos")
         }
     }
@@ -342,19 +332,19 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
 
 
             //setting trusted Contacts
-            localDataBaseViewModel.readAllContacts?.observe(
+            localDataBaseViewModel.readAllContacts.observe(
                 this@MainActivity,
-                Observer { contacts ->
+                { contacts ->
 
                     if (contacts.isNotEmpty()) {
                         //setting user information
-                        localDataBaseViewModel.realAllUserInfo?.observe(
+                        localDataBaseViewModel.realAllUserInfo.observe(
                             this@MainActivity,
-                            Observer { userInfo ->
-                                if(userInfo.isNotEmpty()){
+                            { userInfo ->
+                                if (userInfo.isNotEmpty()) {
                                     mAdapter.setData(contacts)
 
-                                    if(userInfo[0].Image !=null){
+                                    if (userInfo[0].Image != null) {
                                         Glide.with(this@MainActivity)
                                             .asBitmap()
                                             .load(userInfo[0].Image)
@@ -389,7 +379,7 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
         val sim1Check = dialog.findViewById<RadioButton>(R.id.sim1)
         val sim2Check = dialog.findViewById<RadioButton>(R.id.sim2)
 
-        localDataBaseViewModel.readAllSIMSlot?.observe(this, Observer { databaseSIM ->
+        localDataBaseViewModel.readAllSIMSlot.observe(this, { databaseSIM ->
 
             if (databaseSIM.isNotEmpty()) {
                 if (databaseSIM[0].SELECTED_SIM_SLOT == "0") {
@@ -534,13 +524,8 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
                     Toast.LENGTH_SHORT
                 ).show()
                 Handler(Looper.getMainLooper()).postDelayed({
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                        stopService(Intent(this@MainActivity, MotionDetectService::class.java))
-                        finishAndRemoveTask()
-                    } else {
-                        stopService(Intent(this@MainActivity, MotionDetectService::class.java))
-                        this.finishAffinity()
-                    }
+                    stopService(Intent(this@MainActivity, MotionDetectService::class.java))
+                    finishAndRemoveTask()
 
                 }, 2000)
             }.create()

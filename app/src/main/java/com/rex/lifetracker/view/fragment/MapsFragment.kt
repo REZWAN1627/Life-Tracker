@@ -1,17 +1,20 @@
 package com.rex.lifetracker.view.fragment
 
 import android.Manifest
-import android.annotation.SuppressLint
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Color
 import android.location.Location
-import android.location.LocationManager
 import android.os.Bundle
 import android.util.Log
 import android.view.View
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.*
@@ -19,13 +22,14 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
-import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.*
 import com.google.android.gms.tasks.RuntimeExecutionException
 import com.rex.lifetracker.R
 import com.rex.lifetracker.databinding.FragmentMapsBinding
 import com.rex.lifetracker.utils.Constant.GPS_AUTO_START_REQUEST_CODE
 import com.rex.lifetracker.utils.Constant.REQUEST_PERMISSION
 import com.rex.lifetracker.utils.Constant.TAG
+
 
 class MapsFragment : Fragment(R.layout.fragment_maps), OnMapReadyCallback {
     private lateinit var fusedLocationProviderClient: FusedLocationProviderClient
@@ -86,6 +90,22 @@ class MapsFragment : Fragment(R.layout.fragment_maps), OnMapReadyCallback {
                                 currentLocation.longitude
                             )
                         )
+                        mGoogleMap.addMarker(
+                            MarkerOptions().position(LatLng(currentLocation.latitude, currentLocation.longitude)).icon(
+                                bitmapDescriptorFromVector(requireContext(),R.drawable.ic_baseline_directions_bike_24))
+                                .anchor(0.5f,0.5f)
+
+                            )
+                        mGoogleMap.addCircle(CircleOptions().center(LatLng(currentLocation.latitude, currentLocation.longitude))
+                            .radius(100.5)
+                            .fillColor(Color.argb(100, 130, 182, 228))
+                            .strokeColor(Color.argb(255, 130, 182, 228))
+                            .strokeWidth(2.0f)
+
+                        )
+
+
+
 
                     } else {
 
@@ -199,28 +219,28 @@ class MapsFragment : Fragment(R.layout.fragment_maps), OnMapReadyCallback {
 
 
     override fun onDetach() {
-        Log.d(TAG, "Fragment: Deactach is called")
+        Log.d(TAG, "Fragment : Deactach is called")
         super.onDetach()
     }
 
     override fun onStart() {
-        Log.d(TAG, "fragment on start: is called")
+        Log.d(TAG, "Fragment : on start: is called")
         super.onStart()
     }
 
     override fun onDestroyView() {
-        Log.d(TAG, "onDestroyView: is called")
+        Log.d(TAG, "Fragment : onDestroyView is called")
         super.onDestroyView()
     }
 
     override fun onPause() {
-        Log.d(TAG, "Fragment: on pause is called")
+        Log.d(TAG, "Fragment : on pause is called")
         super.onPause()
     }
 
     override fun onResume() {
 
-        Log.d(TAG, "fragment onResume: is called")
+        Log.d(TAG, "Fragment : onResume is called")
         getCurrentLocation()
 
         super.onResume()
@@ -228,7 +248,7 @@ class MapsFragment : Fragment(R.layout.fragment_maps), OnMapReadyCallback {
 
 
     override fun onMapReady(googleMap: GoogleMap?) {
-        Log.d(TAG, "onMapReady: is called")
+        Log.e(TAG, "Fragment :onMapReady is called")
 
         // mGoogleMap.uiSettings.isZoomControlsEnabled = true
 
@@ -253,10 +273,22 @@ class MapsFragment : Fragment(R.layout.fragment_maps), OnMapReadyCallback {
             // for ActivityCompat#requestPermissions for more details.
             return
         }
-        mGoogleMap.isMyLocationEnabled = true
+        mGoogleMap.isMyLocationEnabled = false
+//        mGoogleMap.addMarker(MarkerOptions().position(malaysiaCoordinate).icon(
+//            bitmapDescriptorFromVector(requireContext(),R.drawable.ic_baseline_directions_bike_24)))
 
 //        if(mLocationManager?.isProviderEnabled(LocationManager.GPS_PROVIDER) == true){
 //
 //        }
     }
+
+    private fun bitmapDescriptorFromVector(context: Context, vectorResId: Int): BitmapDescriptor? {
+        return ContextCompat.getDrawable(context, vectorResId)?.run {
+            setBounds(0, 0, intrinsicWidth, intrinsicHeight)
+            val bitmap = Bitmap.createBitmap(intrinsicWidth, intrinsicHeight, Bitmap.Config.ARGB_8888)
+            draw(Canvas(bitmap))
+            BitmapDescriptorFactory.fromBitmap(bitmap)
+        }
+    }
+
 }

@@ -8,6 +8,7 @@ import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.media.RingtoneManager
+import android.net.Uri
 import android.os.IBinder
 import android.util.Log
 import android.widget.Toast
@@ -25,14 +26,13 @@ import com.rex.lifetracker.utils.Constant.MOTION_ALERT_SYSTEM_NOTIFICATION_ID
 import com.rex.lifetracker.utils.Constant.TAG
 import com.rex.lifetracker.view.MainActivity
 import com.rex.lifetracker.view.SOS
-import kotlin.math.abs
 import kotlin.math.roundToInt
 import kotlin.math.sqrt
 
 
 class MotionDetectService : Service(), SensorEventListener {
 
-//    private var xAxis = 0f
+    //    private var xAxis = 0f
 //    private var yAxis = 0f
 //    private var zAxis = 0f
 //    private var previousXAXIS = 0f
@@ -267,48 +267,45 @@ class MotionDetectService : Service(), SensorEventListener {
     }
 
     //deprecated
-   /* private fun updateAccelerometer(value: Float, value1: Float, value2: Float) {
-        // Log.d(TAG, "updateAccelerometer: is called")
-        if (firstUpdate) {
-            //    Log.d(TAG, "updateAccelerometer: first update")
-            previousXAXIS = value
-            previousYAXIS = value1
-            previousZAXIS = value2
-            firstUpdate = false
-        } else {
-            //   Log.d(TAG, "updateAccelerometer: without first update")
-            previousXAXIS = xAxis
-            previousYAXIS = yAxis
-            previousZAXIS = zAxis
-        }
-        //  Log.d(TAG, "updateAccelerometer: outside if else")
-        xAxis = value
-        yAxis = value1
-        zAxis = value2
-//        Log.d(TAG, "updateAccelerometer: of x -> $xAxis of y -> $yAxis of z -> $zAxis")
-//        Log.d(
-//            TAG,
-//            "updateAccelerometer: of XX -> $previousXAXIS of YY -> $previousYAXIS of ZZ -> $previousZAXIS"
-//        )
-    }
+    /* private fun updateAccelerometer(value: Float, value1: Float, value2: Float) {
+         // Log.d(TAG, "updateAccelerometer: is called")
+         if (firstUpdate) {
+             //    Log.d(TAG, "updateAccelerometer: first update")
+             previousXAXIS = value
+             previousYAXIS = value1
+             previousZAXIS = value2
+             firstUpdate = false
+         } else {
+             //   Log.d(TAG, "updateAccelerometer: without first update")
+             previousXAXIS = xAxis
+             previousYAXIS = yAxis
+             previousZAXIS = zAxis
+         }
+         //  Log.d(TAG, "updateAccelerometer: outside if else")
+         xAxis = value
+         yAxis = value1
+         zAxis = value2
+ //        Log.d(TAG, "updateAccelerometer: of x -> $xAxis of y -> $yAxis of z -> $zAxis")
+ //        Log.d(
+ //            TAG,
+ //            "updateAccelerometer: of XX -> $previousXAXIS of YY -> $previousYAXIS of ZZ -> $previousZAXIS"
+ //        )
+     }
 
-    private fun isAccelerometerChanged(): Boolean {
-//        Log.d(TAG, "isAccelerometerChanged: is called")
-//        Log.d(TAG, "isAccelerometerChanged: of x -> $xAxis of y -> $yAxis of z -> $zAxis")
-//        Log.d(
-//            TAG,
-//            "isAccelerometerChanged: of XX -> $previousXAXIS of YY -> $previousYAXIS of ZZ -> $previousZAXIS"
-//        )
-        //change is at-least 2 axis
-        val deltaX: Float = abs(previousXAXIS - xAxis)
-        val deltaY: Float = abs(previousYAXIS - yAxis)
-        val deltaZ: Float = abs(previousZAXIS - zAxis)
-        //  Log.d(TAG, "isAccelerometerChanged: X -> $deltaX Y -> $deltaY Z -> $deltaZ")
-        return deltaX > estimatedShakeValue && deltaY > estimatedShakeValue || deltaX > estimatedShakeValue && deltaZ > estimatedShakeValue || deltaY > estimatedShakeValue && deltaZ > estimatedShakeValue
-    }*/
-
-
-
+     private fun isAccelerometerChanged(): Boolean {
+ //        Log.d(TAG, "isAccelerometerChanged: is called")
+ //        Log.d(TAG, "isAccelerometerChanged: of x -> $xAxis of y -> $yAxis of z -> $zAxis")
+ //        Log.d(
+ //            TAG,
+ //            "isAccelerometerChanged: of XX -> $previousXAXIS of YY -> $previousYAXIS of ZZ -> $previousZAXIS"
+ //        )
+         //change is at-least 2 axis
+         val deltaX: Float = abs(previousXAXIS - xAxis)
+         val deltaY: Float = abs(previousYAXIS - yAxis)
+         val deltaZ: Float = abs(previousZAXIS - zAxis)
+         //  Log.d(TAG, "isAccelerometerChanged: X -> $deltaX Y -> $deltaY Z -> $deltaZ")
+         return deltaX > estimatedShakeValue && deltaY > estimatedShakeValue || deltaX > estimatedShakeValue && deltaZ > estimatedShakeValue || deltaY > estimatedShakeValue && deltaZ > estimatedShakeValue
+     }*/
 
 
     private fun setCurrentAcceleration(event: SensorEvent) {
@@ -399,7 +396,6 @@ class MotionDetectService : Service(), SensorEventListener {
         )
 
 
-        var i = 0
         val notification = NotificationCompat.Builder(this, CHANNEL_ALERT_SYSTEM_ID)
             .setSmallIcon(R.drawable.ic_baseline_add_alert_24)
             .setContentTitle("Motion Detected")
@@ -419,33 +415,16 @@ class MotionDetectService : Service(), SensorEventListener {
                     1000,
                     1000,
                     1000,
-                    1000,
-                    1000,
-                    1000,
-                    1000,
-                    1000,
-                    1000,
-                    1000,
-                    1000,
-                    1000,
-                    1000,
-                    1000,
-                    1000,
-                    1000,
-                    1000,
-                    1000,
-                    1000,
-                    1000,
-                    1000,
-                    1000,
-                    1000,
-                    1000,
-                    1000,
                     1000
                 )
             )
             .setShowWhen(true)
-            .setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION))
+            .setSound(
+                Uri.parse(
+                    "android.resource://"
+                            + packageName + "/" + R.raw.siren
+                )
+            )
 
             //.setAutoCancel(true)
             //  .setOnlyAlertOnce(true)

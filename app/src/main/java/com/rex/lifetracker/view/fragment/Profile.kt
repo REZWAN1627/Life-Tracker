@@ -1,52 +1,43 @@
 package com.rex.lifetracker.view.fragment
 
+import android.Manifest
+import android.app.Activity
+import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.drawable.BitmapDrawable
+import android.net.Uri
 import android.os.Bundle
+import android.text.TextUtils
+import android.util.Log
 import android.view.View
+import android.widget.Toast
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
+import coil.ImageLoader
+import coil.request.ImageRequest
+import coil.request.SuccessResult
 import com.bumptech.glide.Glide
 import com.rex.lifetracker.R
+import com.rex.lifetracker.RoomDataBase.LocalDataBase_Entity.PersonalInfo_Entity
 import com.rex.lifetracker.databinding.FragmentProfileBinding
-import com.rex.lifetracker.viewModel.firebaseViewModel.SignInViewModel
-import com.rex.lifetracker.viewModel.firebaseViewModel.UserInfoViewModel
-
-// TODO: Rename parameter arguments, choose names that match
-// the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-private const val ARG_PARAM1 = "param1"
-private const val ARG_PARAM2 = "param2"
-
-/**
- * A simple [Fragment] subclass.
- * Use the [Profile.newInstance] factory method to
- * create an instance of this fragment.
- */
-class Profile : Fragment(R.layout.fragment_profile) {
-//    // TODO: Rename and change types of parameters
-//    private var param1: String? = null
-//    private var param2: String? = null
-//
-//    override fun onCreate(savedInstanceState: Bundle?) {
-//        super.onCreate(savedInstanceState)
-//        arguments?.let {
-//            param1 = it.getString(ARG_PARAM1)
-//            param2 = it.getString(ARG_PARAM2)
-//        }
-//    }
-//
+import com.rex.lifetracker.utils.Constant
+import com.rex.lifetracker.viewModel.LocalDataBaseVM.LocalDataBaseViewModel
+import com.theartofdev.edmodo.cropper.CropImage
+import com.theartofdev.edmodo.cropper.CropImageView
+import com.vmadalin.easypermissions.EasyPermissions
+import com.vmadalin.easypermissions.dialogs.SettingsDialog
+import dmax.dialog.SpotsDialog
+import kotlinx.coroutines.launch
 
 
-    //    override fun onCreateView(
-//        inflater: LayoutInflater, container: ViewGroup?,
-//        savedInstanceState: Bundle?
-//    ): View? {
-//        // Inflate the layout for this fragment
-//        return inflater.inflate(R.layout.fragment_profile, container, false)
-//    }
-//
-    private lateinit var signInViewModel: SignInViewModel
-    private lateinit var userInfoViewModel: UserInfoViewModel
+class Profile : Fragment(R.layout.fragment_profile), EasyPermissions.PermissionCallbacks {
+
+
     private lateinit var binding: FragmentProfileBinding
+    private lateinit var localDataBaseViewModel: LocalDataBaseViewModel
+    private var imageUri: Uri? = null
+    private var selectImage = false
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         binding = FragmentProfileBinding.bind(view)
@@ -58,57 +49,197 @@ class Profile : Fragment(R.layout.fragment_profile) {
 
     private fun setValue() {
         binding.apply {
-            signInViewModel.collectUserInfoLiveData?.observe(viewLifecycleOwner, Observer { userEmailData ->
-                userInfoViewModel.getUserInfoLiveData?.observe(viewLifecycleOwner, Observer { userData ->
+            localDataBaseViewModel.realAllUserInfo.observe(viewLifecycleOwner, { userInfo ->
 
-                    Glide.with(this@Profile).load(userEmailData.imageUrl)
-                        .centerCrop()
-                        .placeholder(R.drawable.ic_team)
-                        .into(userProfileImage)
-                    if (userData != null) {
-                        profileUserName.text = userData.first_Name+ " "+userData.last_Name
+                Glide.with(requireContext())
+                    .asBitmap()
+                    .load(userInfo[0].Image)
+                    .placeholder(R.drawable.ic_man)
+                    .into(editProfileImage)
+                editProfileImage.visibility = View.VISIBLE
+                addEditPhotoIcon.visibility = View.GONE
+                editprofileFirstName.setText(userInfo[0].First_Name)
+                editprofileLastName.setText(userInfo[0].Last_Name)
+                edituserEmail.text = userInfo[0].User_Email
+
+                editTakeProfileImage.setOnClickListener {
+                    checkPhotoPermission()
+                }
+
+                editProfileSavebtn.setOnClickListener {
+                    if (TextUtils.isEmpty(editprofileFirstName.text.toString()) || TextUtils.isEmpty(
+                            editprofileLastName.text.toString()
+                        )
+                    ) {
+                        editprofileLastName.error = "Field is empty"
+                        editprofileFirstName.error = "Field is empty"
+                        return@setOnClickListener
+                    } else {
+
+                        if (selectImage) {
+                            uploadToDatabase(
+                                editprofileFirstName.text.toString(),
+                                editprofileLastName.text.toString(),
+                                userInfo[0].Deactivate_Time,
+                                userInfo[0].Active_Time,
+                                userInfo[0].User_Email,
+                                imageUri
+                            )
+                            Toast.makeText(
+                                requireContext(),
+                                "Information Updated",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        } else {
+
+                            localDataBaseViewModel.addUserInfo(
+                                PersonalInfo_Entity(
+                                    0,
+                                    editprofileFirstName.text.toString(),
+                                    editprofileLastName.text.toString(),
+                                    userInfo[0].Deactivate_Time,
+                                    userInfo[0].Active_Time,
+                                    userInfo[0].User_Email,
+                                    userInfo[0].Image
+
+                                )
+                            )
+                            Toast.makeText(
+                                requireContext(),
+                                "Information Updated",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+
                     }
-                    profileUserEmail.text = userEmailData.email
+                }
 
-
-                })
             })
         }
     }
 
-    private fun initViewModel() {
-        signInViewModel = ViewModelProvider(
-            this,
-            ViewModelProvider.AndroidViewModelFactory.getInstance(requireActivity().application)
-        ).get(
-            SignInViewModel::class.java
-        )
-        userInfoViewModel = ViewModelProvider(
-            this,
-            ViewModelProvider.AndroidViewModelFactory.getInstance(requireActivity().application)
-        ).get(
-            UserInfoViewModel::class.java
-        )
+    private fun uploadToDatabase(
+        Firstname: String,
+        LastName: String,
+        deactivateTime: String,
+        activeTime: String,
+        userEmail: String,
+        imageUri: Uri?
+    ) {
+        val dialogue =
+            SpotsDialog.Builder().setContext(requireContext())
+                .setTheme(R.style.Custom)
+                .setCancelable(true).build()
+        dialogue?.show()
+        lifecycleScope.launch {
+            binding.apply {
+                localDataBaseViewModel.addUserInfo(
+                    PersonalInfo_Entity(
+                        0,
+                        Firstname,
+                        LastName,
+                        deactivateTime,
+                        activeTime,
+                        userEmail,
+                        getBitmap(imageUri.toString())
+
+                    )
+                )
+
+            }
+        }
+        dialogue.dismiss()
+
 
     }
 
-//    companion object {
-//        /**
-//         * Use this factory method to create a new instance of
-//         * this fragment using the provided parameters.
-//         *
-//         * @param param1 Parameter 1.
-//         * @param param2 Parameter 2.
-//         * @return A new instance of fragment Profile.
-//         */
-//        // TODO: Rename and change types and number of parameters
-//        @JvmStatic
-//        fun newInstance(param1: String, param2: String) =
-//            Profile().apply {
-//                arguments = Bundle().apply {
-//                    putString(ARG_PARAM1, param1)
-//                    putString(ARG_PARAM2, param2)
-//                }
-//            }
-//    }
+    private fun initViewModel() {
+        localDataBaseViewModel = ViewModelProvider(this).get(LocalDataBaseViewModel::class.java)
+    }
+
+
+    private fun hasPermission() =
+        EasyPermissions.hasPermissions(
+            requireContext(),
+            Manifest.permission.READ_EXTERNAL_STORAGE,
+            Manifest.permission.WRITE_EXTERNAL_STORAGE
+        )
+
+    private fun checkPhotoPermission() {
+        EasyPermissions.requestPermissions(
+            this,
+            "This application cannot work without  Permission.",
+            Constant.REQUEST_STORAGE_READ_WRITE_CODE,
+            Manifest.permission.READ_EXTERNAL_STORAGE,
+            Manifest.permission.WRITE_EXTERNAL_STORAGE
+        )
+    }
+
+    override fun onPermissionsDenied(requestCode: Int, perms: List<String>) {
+        if (EasyPermissions.somePermissionPermanentlyDenied(this, perms)) {
+            SettingsDialog.Builder(requireContext()).build().show()
+        } else {
+            checkPhotoPermission()
+        }
+    }
+
+    override fun onPermissionsGranted(requestCode: Int, perms: List<String>) {
+
+        if (!hasPermission()) {
+            // requestLocationPermission()
+        } else {
+            selectImage()
+        }
+
+    }
+
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        EasyPermissions.onRequestPermissionsResult(requestCode, permissions, grantResults, this)
+    }
+
+    private fun selectImage() {
+        CropImage.activity().setGuidelines(CropImageView.Guidelines.ON)
+            .setAspectRatio(1, 1)
+            .start(requireContext(), this)
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == CropImage.CROP_IMAGE_ACTIVITY_REQUEST_CODE) {
+            val result = CropImage.getActivityResult(data)
+            if (resultCode == Activity.RESULT_OK) {
+                binding.apply {
+                    Glide.with(requireContext())
+                        .asBitmap()
+                        .load(result.uri)
+                        .placeholder(R.drawable.ic_man)
+                        .into(editProfileImage)
+                    addEditPhotoIcon.visibility = View.GONE
+                    imageUri = result.uri
+                    selectImage = true
+
+                }
+            }
+        }
+    }
+
+
+    private suspend fun getBitmap(imageUri: String): Bitmap {
+        Log.d(Constant.TAG, "getBitmap: $imageUri")
+        val loading = ImageLoader(requireContext())
+        val request = ImageRequest.Builder(requireContext())
+            .data(imageUri)
+            .build()
+
+        val result = (loading.execute(request) as SuccessResult).drawable
+        return (result as BitmapDrawable).bitmap
+    }
+
+
 }
