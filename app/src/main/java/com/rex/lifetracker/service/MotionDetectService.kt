@@ -1,7 +1,6 @@
 package com.rex.lifetracker.service
 
 import android.app.PendingIntent
-import android.app.Service
 import android.content.Intent
 import android.hardware.Sensor
 import android.hardware.SensorEvent
@@ -9,13 +8,16 @@ import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.media.RingtoneManager
 import android.net.Uri
-import android.os.IBinder
 import android.util.Log
-import android.widget.Toast
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.lifecycle.LifecycleService
+import androidx.lifecycle.MutableLiveData
 import com.rex.lifetracker.R
 import com.rex.lifetracker.service.broadcast_receiver.SystemShakeAlert_broadcastReceiver
+import com.rex.lifetracker.utils.Constant.ACTION_START_SERVICE
+import com.rex.lifetracker.utils.Constant.ACTION_START_SERVICE_FROM_NOTIFICATION
+import com.rex.lifetracker.utils.Constant.ACTION_STOP_SERVICE
 import com.rex.lifetracker.utils.Constant.ACTIVITY_REQUEST_CODE
 import com.rex.lifetracker.utils.Constant.BROADCAST_REQUEST_CODE
 import com.rex.lifetracker.utils.Constant.CANCEL_ACTION
@@ -30,29 +32,13 @@ import kotlin.math.roundToInt
 import kotlin.math.sqrt
 
 
-class MotionDetectService : Service(), SensorEventListener {
+class MotionDetectService : LifecycleService(), SensorEventListener {
 
-    //    private var xAxis = 0f
-//    private var yAxis = 0f
-//    private var zAxis = 0f
-//    private var previousXAXIS = 0f
-//    private var previousYAXIS = 0f
-//    private var previousZAXIS = 0f
-//    private var estimatedShakeValue = 12.5f
-//    private var firstUpdate = true
-//    private var shakeState = false
+
     private var sensorManager: SensorManager? = null
     private var sensor: Sensor? = null
     private lateinit var notificationManager: NotificationManagerCompat
 
-//    private val mSensorX = 0f
-//    private val mSensorY = 0f
-//    private val mDisplay: Display? = null
-//    private val mPowerManager: PowerManager? = null
-//    private val mWindowManager: WindowManager? = null
-//
-//    var gravity = DoubleArray(3)
-//    var linear_acceleration = DoubleArray(3)
 
     private var accelerationX = 0.0
     private var accelerationY: Double = 0.0
@@ -88,13 +74,12 @@ class MotionDetectService : Service(), SensorEventListener {
     var moveCount = 0
 
 
-    override fun onBind(intent: Intent?): IBinder? = null
-
     override fun onCreate() {
         super.onCreate()
         sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
         sensor = sensorManager?.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
         notificationManager = NotificationManagerCompat.from(this)
+
     }
 
     override fun onDestroy() {
@@ -104,8 +89,44 @@ class MotionDetectService : Service(), SensorEventListener {
 
     }
 
+    companion object {
+        val uiChange = MutableLiveData<UIChange>()
+    }
+
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+
+        intent?.let {
+            when (it.action) {
+                ACTION_START_SERVICE -> {
+                    //timerEvent.postValue(UIChange.START)
+                    ForegroundStart()
+                    Log.d(TAG, "onStartCommand: Service is Started")
+                }
+                ACTION_STOP_SERVICE -> {
+                    uiChange.postValue(UIChange.END)
+                    stopSelf()
+                    Log.d(TAG, "onStartCommand: services is sttoped")
+                }
+                ACTION_START_SERVICE_FROM_NOTIFICATION -> {
+                    ForegroundStart()
+                    uiChange.postValue(UIChange.END)
+                }
+                else -> {
+                    //do nothing
+                    Log.d(TAG, "onStartCommand: services is sttoped")
+                }
+            }
+        }
+
+
+
+        return super.onStartCommand(intent, flags, startId)
+    }
+
+    private fun ForegroundStart() {
         sensorManager?.registerListener(this, sensor, SensorManager.SENSOR_DELAY_NORMAL)
+
         val intent = Intent(this, MainActivity::class.java)
         intent.putExtra("Service", "YES")
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -125,30 +146,27 @@ class MotionDetectService : Service(), SensorEventListener {
             // .setContentIntent(pendingIntent)
             .build()
         startForeground(FOREGROUND_NOTIFICATION_ID, notification)
-        // createAlertNotification()
-
-        return START_STICKY
     }
 
     override fun onSensorChanged(event: SensorEvent?) {
 
 
         accelerationX = (event!!.values[0] * 1000).roundToInt() / 1000.0
-        Log.d(TAG, "onSensorChanged: acceleration X -------> $accelerationX")
-        accelerationY = (event!!.values[1] * 1000).roundToInt() / 1000.0
-        Log.d(TAG, "onSensorChanged: acceleration Y -------> $accelerationY")
-        accelerationZ = (event!!.values[2] * 1000).roundToInt() / 1000.0
-        Log.d(TAG, "onSensorChanged: acceleration Z -------> $accelerationZ")
+          Log.d(TAG, "onSensorChanged: acceleration X -------> $accelerationX")
+        accelerationY = (event.values[1] * 1000).roundToInt() / 1000.0
+        //Log.d(TAG, "onSensorChanged: acceleration Y -------> $accelerationY")
+        accelerationZ = (event.values[2] * 1000).roundToInt() / 1000.0
+        // Log.d(TAG, "onSensorChanged: acceleration Z -------> $accelerationZ")
 
-        Log.d(TAG, "===============================================================")
-        Log.d(TAG, "===============================================================")
+//        Log.d(TAG, "===============================================================")
+//        Log.d(TAG, "===============================================================")
 
         /* Detect Accident */
         if (accelerationX > threshold || accelerationY > threshold || accelerationZ > threshold) {
-            Log.d(TAG, "threshold == $threshold")
-            Log.d(TAG, "final: acceleration X -------> $accelerationX")
-            Log.d(TAG, "final: acceleration Y -------> $accelerationY")
-            Log.d(TAG, "final: acceleration Z -------> $accelerationZ")
+//            Log.d(TAG, "threshold == $threshold")
+//            Log.d(TAG, "final: acceleration X -------> $accelerationX")
+//            Log.d(TAG, "final: acceleration Y -------> $accelerationY")
+//            Log.d(TAG, "final: acceleration Z -------> $accelerationZ")
             executeShakeAction()
         }
 
@@ -188,124 +206,11 @@ class MotionDetectService : Service(), SensorEventListener {
             }
         }
 
-
-//version 1.0------------------------------------------------------
-        /* // alpha is calculated as t / (t + dT)
-         // with t, the low-pass filter's time-constant
-         // and dT, the event delivery rate
-         val alpha = 0.8.toFloat()
-
-         gravity[0] = alpha * gravity[0] + (1 - alpha) * event!!.values[0]
-         Log.d(TAG, "onSensorChanged: gravity[0] ---> " + gravity[0])
-         gravity[1] = alpha * gravity[1] + (1 - alpha) * event!!.values[1]
-         Log.d(TAG, "onSensorChanged: gravity[1] ---> " + gravity[1])
-         gravity[2] = alpha * gravity[2] + (1 - alpha) * event!!.values[2]
-         Log.d(TAG, "onSensorChanged: gravity[2] ---> " + gravity[2])
-
-         Log.d(TAG, "-------------------------------------------------")
-         Log.d(TAG, "=================================================")
-
-         linear_acceleration[0] = event!!.values[0] - gravity[0]
-         Log.d(
-             TAG,
-             "onSensorChanged: linear_accleration [0] ---> " + linear_acceleration[0]
-         )
-         linear_acceleration[1] = event!!.values[1] - gravity[1]
-         Log.d(
-             TAG,
-             "onSensorChanged: linear_accleration [1] ---> " + linear_acceleration[1]
-         )
-         linear_acceleration[2] = event!!.values[2] - gravity[2]
-         Log.d(
-            TAG,
-             "onSensorChanged: linear_accleration [2] ---> " + linear_acceleration[2]
-         )
-
-         Log.d(TAG, "-------------------------------------------------")
-         Log.d(TAG, "=================================================")
-
-         val total = sqrt(
-             linear_acceleration[0] *
-                     linear_acceleration[0] + (linear_acceleration[1] *
-                     linear_acceleration[1]) + ((linear_acceleration[2]
-                     * linear_acceleration[2]))
-         ) / 9.8
-         Log.d(TAG, "onSensorChanged: total math ---> $total")
-         val t = "" + total
-         Log.d(TAG, "onSensorChanged: -----------> $t")
-         if (total > 2.5) {
-             executeShakeAction()
-         }*/
-
-//old version//
-        /*if (event != null) {
-//            Log.d(
-//                TAG,
-//                "onSensorChanged: X-> " + event.values[0] + " Y -> " + event.values[1] + " Z-> " + event.values[1]
-//            )
-
-
-            updateAccelerometer(event.values[0], event.values[1], event.values[1])
-            if (!shakeState && isAccelerometerChanged()) {
-                //  Log.d(TAG, "onSensorChanged: is called once")
-                shakeState = true
-            } else if (shakeState && isAccelerometerChanged()) {
-                //  Log.d(TAG, "onSensorChanged: is called twice")
-                executeShakeAction()
-            } else if (shakeState && !isAccelerometerChanged()) {
-                //  Log.d(TAG, "onSensorChanged: is called trice")
-                shakeState = false
-
-            }
-
-        }*/
-
     }
 
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
 
     }
-
-    //deprecated
-    /* private fun updateAccelerometer(value: Float, value1: Float, value2: Float) {
-         // Log.d(TAG, "updateAccelerometer: is called")
-         if (firstUpdate) {
-             //    Log.d(TAG, "updateAccelerometer: first update")
-             previousXAXIS = value
-             previousYAXIS = value1
-             previousZAXIS = value2
-             firstUpdate = false
-         } else {
-             //   Log.d(TAG, "updateAccelerometer: without first update")
-             previousXAXIS = xAxis
-             previousYAXIS = yAxis
-             previousZAXIS = zAxis
-         }
-         //  Log.d(TAG, "updateAccelerometer: outside if else")
-         xAxis = value
-         yAxis = value1
-         zAxis = value2
- //        Log.d(TAG, "updateAccelerometer: of x -> $xAxis of y -> $yAxis of z -> $zAxis")
- //        Log.d(
- //            TAG,
- //            "updateAccelerometer: of XX -> $previousXAXIS of YY -> $previousYAXIS of ZZ -> $previousZAXIS"
- //        )
-     }
-
-     private fun isAccelerometerChanged(): Boolean {
- //        Log.d(TAG, "isAccelerometerChanged: is called")
- //        Log.d(TAG, "isAccelerometerChanged: of x -> $xAxis of y -> $yAxis of z -> $zAxis")
- //        Log.d(
- //            TAG,
- //            "isAccelerometerChanged: of XX -> $previousXAXIS of YY -> $previousYAXIS of ZZ -> $previousZAXIS"
- //        )
-         //change is at-least 2 axis
-         val deltaX: Float = abs(previousXAXIS - xAxis)
-         val deltaY: Float = abs(previousYAXIS - yAxis)
-         val deltaZ: Float = abs(previousZAXIS - zAxis)
-         //  Log.d(TAG, "isAccelerometerChanged: X -> $deltaX Y -> $deltaY Z -> $deltaZ")
-         return deltaX > estimatedShakeValue && deltaY > estimatedShakeValue || deltaX > estimatedShakeValue && deltaZ > estimatedShakeValue || deltaY > estimatedShakeValue && deltaZ > estimatedShakeValue
-     }*/
 
 
     private fun setCurrentAcceleration(event: SensorEvent) {
@@ -337,15 +242,16 @@ class MotionDetectService : Service(), SensorEventListener {
 
         /*
          *  END SECTION from Android developer site
-         */Log.d(TAG, "===============================================================")
-        Log.d(TAG, "===============================================================")
+         */
+//        Log.d(TAG, "===============================================================")
+//        Log.d(TAG, "===============================================================")
         Current =
             sqrt(
                 (mLinearAcceleration[X] * mLinearAcceleration[X] + mLinearAcceleration[Y] *
                         mLinearAcceleration[Y] + mLinearAcceleration[Z] * mLinearAcceleration[Z]).toDouble()
             ).roundToInt()
                 .toFloat()
-        Log.d(TAG, "setCurrentAcceleration: current ---- $Current")
+      //  Log.d(TAG, "setCurrentAcceleration: current ---- $Current")
     }
 
     private fun getMaxCurrentLinearAcceleration(): Float {
@@ -366,16 +272,13 @@ class MotionDetectService : Service(), SensorEventListener {
         Log.d(TAG, "executeShakeAction: working")
 
         createAlertNotification()
-
-        sensorManager?.unregisterListener(this)
-        Toast.makeText(this, "services off", Toast.LENGTH_SHORT).show()
         stopSelf()
-
-
     }
 
 
     private fun createAlertNotification() {
+        uiChange.postValue(UIChange.START)
+        sensorManager?.unregisterListener(this)
         Log.d(TAG, "createAlertNotification: is called")
         val pendingIntentCancel = PendingIntent.getBroadcast(
             this,
@@ -387,7 +290,6 @@ class MotionDetectService : Service(), SensorEventListener {
         )
 
         val pendingIntentSOS = PendingIntent.getActivity(
-
             this,
             ACTIVITY_REQUEST_CODE,
             Intent(this, SOS::class.java),
@@ -425,9 +327,6 @@ class MotionDetectService : Service(), SensorEventListener {
                             + packageName + "/" + R.raw.siren
                 )
             )
-
-            //.setAutoCancel(true)
-            //  .setOnlyAlertOnce(true)
             .setOngoing(true)
             .setTimeoutAfter(30000)
             .build()

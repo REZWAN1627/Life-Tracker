@@ -24,8 +24,6 @@ import io.reactivex.schedulers.Schedulers
 class Splash : AppCompatActivity() {
     private lateinit var signInViewModel: SignInViewModel
     private lateinit var binding: ActivitySplashBinding
-    private lateinit var userInfoViewModel: UserInfoViewModel
-    private lateinit var trustedContactsViewModel: TrustedContactsViewModel
     private lateinit var localDataBaseViewModel: LocalDataBaseViewModel
     private var internetDisposable: Disposable? = null
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -55,15 +53,7 @@ class Splash : AppCompatActivity() {
         signInViewModel.checkAuthenticateLiveData?.observe(this, {
 
             if (it.isAuth) {
-                Log.d(TAG, "initModel: is called")
-                userInfoViewModel = ViewModelProvider(
-                    this,
-                    ViewModelProvider.AndroidViewModelFactory.getInstance(this.application)
-                ).get(
-                    UserInfoViewModel::class.java
-                )
-                trustedContactsViewModel =
-                    ViewModelProvider(this).get(TrustedContactsViewModel::class.java)
+
                 goToMainActivity()
             } else {
                 goToSignInActivity()
@@ -74,82 +64,34 @@ class Splash : AppCompatActivity() {
     }
 
     private fun goToMainActivity() {
+        localDataBaseViewModel.readAllContacts.observe(this,{list ->
+            if (list.isEmpty()){
+                Handler(Looper.getMainLooper()).postDelayed({
+                    startActivity(Intent(this, SignIn::class.java).putExtra("Nuke", "NO"))
+                    finish()
 
+                }, 1000)
+            }else{
+                Handler(Looper.getMainLooper()).postDelayed({
+                    startActivity(
+                        Intent(
+                            this,
+                            MainActivity::class.java
+                        ).putExtra("Service", "NO")
+                    )
+                    finish()
 
-        userInfoViewModel.getUserInfoLiveData.observe(this, { userInfo ->
-            trustedContactsViewModel.getContactsLiveData?.observe(
-                this,
-                { trustedContacts ->
-
-
-                    if (userInfo != null) {
-                        if (userInfo.last_Name == "null" && userInfo.first_Name == "null") {
-                            Log.d(TAG, "goToMainActivity: user info null")
-                            startActivity(Intent(this, UserInfo::class.java))
-                            finish()
-
-                        } else if (userInfo.first_Name == "null" || userInfo.last_Name == "null") {
-                            Log.d(TAG, "goToMainActivity: One of info null")
-                            startActivity(Intent(this, UserInfo::class.java))
-                            finish()
-                        } else if (trustedContacts.isEmpty()) {
-                            startActivity(Intent(this, TrustedNumberDetails::class.java))
-                            finish()
-                        } else {
-                            Log.d(TAG, "goToMainActivity: is called")
-                            checkNumber()
-
-                        }
-                    }
-
-
-                })
+                }, 1000)
+            }
         })
 
 
-    }
 
-    private fun checkNumber() {
-
-        trustedContactsViewModel.getContactsLiveData?.observe(
-            this,
-            { trustedContacts ->
-                var i = 0
-                var flag1 = false
-                var flag2 = false
-                while (i < trustedContacts.size) {
-                    when (trustedContacts[i].Priority) {
-                        "First" -> {
-                            flag1 = true
-
-                        }
-                        "Second" -> {
-                            flag2 = true
-                        }
-                        else -> {
-                            //do nothing
-                        }
-                    }
-                    i++
-                }
-                if (flag1 && flag2) {
-                    Log.d(TAG, "checkNumber: is checked")
-                    startActivity(Intent(this, MainActivity::class.java).putExtra("Service", "NO"))
-                    // startActivity(Intent(this, TrustedNumberDetails::class.java))
-                    finish()
-                } else {
-                    //startActivity(Intent(this, TrustedNumberDetails::class.java))
-                    startActivity(Intent(this, ManageTrustedContactsList::class.java))
-                    finish()
-                }
-
-            })
     }
 
     private fun goToSignInActivity() {
         Log.d(TAG, "goToSignInActivity: is called")
         startActivity(Intent(this, SignIn::class.java).putExtra("Nuke", "NO"))
-        //startActivity(Intent(this, MainActivity::class.java))
         finish()
     }
 
@@ -169,10 +111,9 @@ class Splash : AppCompatActivity() {
                     true -> {
 
                         Log.d(TAG, "onCreate: has internet")
-                        Handler(Looper.getMainLooper()).postDelayed({
-                            checkIfUserIsAuthenticated()
 
-                        }, 1000)
+                        checkIfUserIsAuthenticated()
+
 
                     }
                     else -> {
@@ -184,7 +125,7 @@ class Splash : AppCompatActivity() {
                                 Log.d(TAG, "localdatabase size -> ${list.size}")
                                 if (list.isEmpty()) {
                                     Handler(Looper.getMainLooper()).postDelayed({
-                                        startActivity(Intent(this, SignIn::class.java))
+                                        startActivity(Intent(this, SignIn::class.java).putExtra("Nuke", "NO"))
                                         finish()
 
                                     }, 1000)

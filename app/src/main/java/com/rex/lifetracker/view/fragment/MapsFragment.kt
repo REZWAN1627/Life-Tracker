@@ -273,7 +273,7 @@ class MapsFragment : Fragment(R.layout.fragment_maps), OnMapReadyCallback {
             // for ActivityCompat#requestPermissions for more details.
             return
         }
-        mGoogleMap.isMyLocationEnabled = false
+        mGoogleMap.isMyLocationEnabled = true
 //        mGoogleMap.addMarker(MarkerOptions().position(malaysiaCoordinate).icon(
 //            bitmapDescriptorFromVector(requireContext(),R.drawable.ic_baseline_directions_bike_24)))
 

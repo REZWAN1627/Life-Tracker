@@ -106,11 +106,11 @@
             app:defaultNavHost="true"
             app:navGraph="@navigation/userui_navigationgraph" />
 
+
         <androidx.coordinatorlayout.widget.CoordinatorLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_above="@+id/bottomNavigationView">
-
             <LinearLayout
                 android:id="@+id/bottomSheet"
                 android:layout_width="match_parent"
@@ -208,7 +208,7 @@
                     android:orientation="horizontal">
 
                     <Button
-                        android:id="@+id/schedule"
+                        android:id="@+id/turnOffServices"
                         android:layout_width="@dimen/_120sdp"
                         android:layout_height="@dimen/_30sdp"
                         android:background="@drawable/shape_unselete_button"
@@ -236,6 +236,71 @@
                     android:layout_height="@dimen/_10sdp" />
 
             </LinearLayout>
+
+            <LinearLayout
+                android:visibility="gone"
+                app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior"
+                android:orientation="vertical"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/warning_shape"
+                android:id="@+id/bottomSheet2">
+                <Button
+                    android:layout_width="@dimen/_50sdp"
+                    android:layout_height="@dimen/_4sdp"
+                    android:layout_gravity="center"
+                    android:layout_marginTop="@dimen/_10sdp"
+                    android:background="@drawable/bshape_blackhypeb" />
+                <TextView
+                    android:gravity="center"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:layout_marginTop="@dimen/_20sdp"
+                    android:text="Calling..."
+                    android:textColor="@color/white"
+                    android:textSize="@dimen/_30ssp" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Trusted Numbers   "
+                    android:textColor="@color/white"
+                    android:layout_gravity="center"
+                    android:textStyle="bold"
+                    android:textSize="@dimen/_13ssp"
+                    android:padding="@dimen/_10sdp"/>
+
+                <RelativeLayout
+                    android:id="@+id/stopServicesBeforeCall"
+                    android:rotation="-55"
+                    android:layout_width="@dimen/_100sdp"
+                    android:layout_height="@dimen/_100sdp"
+                    android:background="@drawable/shape_stroke_ring"
+                    android:layout_gravity="center">
+                    <RelativeLayout
+                        android:rotation="55"
+                        android:layout_width="@dimen/_90sdp"
+                        android:layout_height="@dimen/_90sdp"
+                        android:background="@drawable/shape_round_red"
+                        android:layout_centerInParent="true">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Stop"
+                            android:textSize="@dimen/_25ssp"
+                            android:textStyle="bold"
+                            android:textColor="@color/white"
+                            android:layout_centerInParent="true"/>
+                    </RelativeLayout>
+                </RelativeLayout>
+                
+                <Space
+                    android:layout_width="0dp"
+                    android:layout_height="@dimen/_20sdp"/>
+
+            </LinearLayout>
+
+
 
         </androidx.coordinatorlayout.widget.CoordinatorLayout>
     </RelativeLayout>

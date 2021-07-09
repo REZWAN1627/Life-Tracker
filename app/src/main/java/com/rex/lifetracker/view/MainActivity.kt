@@ -3,13 +3,12 @@ package com.rex.lifetracker.view
 import android.Manifest
 import android.animation.ObjectAnimator
 import android.app.Dialog
+import android.app.NotificationManager
+import android.content.Context
 import android.content.Intent
 import android.graphics.drawable.ColorDrawable
 import android.net.Uri
-import android.os.Build
-import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
+import android.os.*
 import android.provider.Settings
 import android.util.Log
 import android.util.TypedValue
@@ -39,6 +38,9 @@ import com.rex.lifetracker.RoomDataBase.LocalDataBase_Entity.SIM_Entity
 import com.rex.lifetracker.adapter.Contacts_RecyclerView
 import com.rex.lifetracker.databinding.ActivityMainBinding
 import com.rex.lifetracker.service.MotionDetectService
+import com.rex.lifetracker.service.UIChange
+import com.rex.lifetracker.utils.Constant.ACTION_START_SERVICE
+import com.rex.lifetracker.utils.Constant.ACTION_STOP_SERVICE
 import com.rex.lifetracker.utils.Constant.REQUESTED_PERMISSION_CODE
 import com.rex.lifetracker.utils.Constant.TAG
 import com.rex.lifetracker.viewModel.LocalDataBaseVM.LocalDataBaseViewModel
@@ -84,22 +86,26 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+
         checkIntentGetExtra()
         requestPermission()
         initViewModel()
         initValue()
         setViewValue()
 
+        setObservers()
+
 
 //------------------------------------binding----------------------------------------//
         binding.apply {
+
             //controlling bottom nav
-            bottomNavigationView.setOnNavigationItemSelectedListener { menu ->
+            bottomNavigationView.setOnItemSelectedListener { menu ->
                 when (menu.itemId) {
                     R.id.notification -> {
                         BottomSheetBehavior.from(bottomSheet).state =
                             BottomSheetBehavior.STATE_HIDDEN
-                        return@setOnNavigationItemSelectedListener NavigationUI.onNavDestinationSelected(
+                        return@setOnItemSelectedListener NavigationUI.onNavDestinationSelected(
                             menu,
                             navController
                         )
@@ -107,7 +113,7 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
                     R.id.mapsFragment -> {
                         BottomSheetBehavior.from(bottomSheet).state =
                             BottomSheetBehavior.STATE_COLLAPSED
-                        return@setOnNavigationItemSelectedListener NavigationUI.onNavDestinationSelected(
+                        return@setOnItemSelectedListener NavigationUI.onNavDestinationSelected(
                             menu,
                             navController
                         )
@@ -115,12 +121,30 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
                     else -> {
                         BottomSheetBehavior.from(bottomSheet).state =
                             BottomSheetBehavior.STATE_HIDDEN
-                        return@setOnNavigationItemSelectedListener NavigationUI.onNavDestinationSelected(
+                        return@setOnItemSelectedListener NavigationUI.onNavDestinationSelected(
                             menu,
                             navController
                         )
                     }
                 }
+            }
+
+
+
+
+            //warning bottom sheet
+            stopServicesBeforeCall.setOnClickListener {
+
+//                bottomSheet.visibility = View.VISIBLE
+               BottomSheetBehavior.from(bottomSheet2).state = BottomSheetBehavior.STATE_COLLAPSED
+                bottomSheet2.visibility = View.GONE
+                BottomSheetBehavior.from(bottomSheet).state = BottomSheetBehavior.STATE_EXPANDED
+//                bottomSheet2.visibility = View.GONE
+                val notificationManager =
+                   getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                notificationManager.cancel(2)
+
+                stopService(Intent(this@MainActivity,MotionDetectService::class.java))
             }
 
             //controlling nav drawer
@@ -133,7 +157,6 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
                 drawerlayout.closeDrawer(GravityCompat.START)
                 selectSIMDialog()
             }
-
             //server start button
             AppTurnOn.setOnClickListener {
                 BottomSheetBehavior.from(bottomSheet).apply {
@@ -145,10 +168,9 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
             }
 
             //server stop button
-            schedule.setOnClickListener {
-                BottomSheetBehavior.from(bottomSheet).apply {
-                    state = BottomSheetBehavior.STATE_COLLAPSED
-                }
+            turnOffServices.setOnClickListener {
+
+
 
                 Toast.makeText(
                     this@MainActivity,
@@ -156,12 +178,15 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
                     Toast.LENGTH_SHORT
                 )
                     .show()
+
                 stopService(
                     Intent(
                         this@MainActivity,
                         MotionDetectService::class.java
-                    )
-                )
+                    ).apply {
+                        this.action = ACTION_STOP_SERVICE
+                    })
+
 
             }
 
@@ -223,6 +248,7 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
 
     }
 
+
     private fun initValue() {
         mAdapter = Contacts_RecyclerView(this)
         userActiveTime = simpleDateFormat.format(calendar.time)
@@ -249,6 +275,20 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
 
             //setting up bottom sheet peek height
             BottomSheetBehavior.from(bottomSheet).apply {
+                val tv = TypedValue()
+                if (theme.resolveAttribute(R.attr.actionBarSize, tv, true)) {
+                    val actionBarHeight = TypedValue.complexToDimensionPixelSize(
+                        tv.data,
+                        resources.displayMetrics
+                    )
+                    peekHeight = actionBarHeight / 2
+                }
+
+                state = BottomSheetBehavior.STATE_COLLAPSED
+            }
+
+            //warning bottom sheet behavior
+            BottomSheetBehavior.from(bottomSheet2).apply {
                 val tv = TypedValue()
                 if (theme.resolveAttribute(R.attr.actionBarSize, tv, true)) {
                     val actionBarHeight = TypedValue.complexToDimensionPixelSize(
@@ -354,11 +394,6 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
                                     navuserGmail.text = userInfo[0].User_Email
 
                                 }
-
-
-                                //setting recycler adapter
-
-
                             })
                     }
                 })
@@ -467,15 +502,36 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
     }
 
     private fun serviceStart() {
-        Toast.makeText(this, "Service Started", Toast.LENGTH_SHORT).show()
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            startForegroundService(Intent(this, MotionDetectService::class.java))
-        } else {
-            Log.d(TAG, "serviceStart: low api called")
-            startService(Intent(this, MotionDetectService::class.java))
-        }
-
+        //Toast.makeText(this, "Service Started", Toast.LENGTH_SHORT).show()
+        startForegroundService(Intent(this, MotionDetectService::class.java).apply {
+            this.action = ACTION_START_SERVICE
+        })
         Log.d(TAG, "serviceStart: Started Services")
+    }
+
+    private fun setObservers() {
+        MotionDetectService.uiChange.observe(this, {
+            when (it) {
+                is UIChange.START -> {
+                    binding.apply {
+//                        bottomSheet.setBackgroundColor(Color.RED)
+                        BottomSheetBehavior.from(bottomSheet).state = BottomSheetBehavior.STATE_COLLAPSED
+                        bottomSheet2.visibility = View.VISIBLE
+                        BottomSheetBehavior.from(bottomSheet2).state = BottomSheetBehavior.STATE_EXPANDED
+                    }
+                }
+                is UIChange.END -> {
+                    Toast.makeText(this, "Working out", Toast.LENGTH_SHORT).show()
+                    binding.apply {
+                        BottomSheetBehavior.from(bottomSheet).state = BottomSheetBehavior.STATE_EXPANDED
+                        bottomSheet.visibility = View.VISIBLE
+//                        BottomSheetBehavior.from(bottomSheet2).state = BottomSheetBehavior.STATE_HIDDEN
+                        bottomSheet2.visibility = View.GONE
+                        //bottomSheet.background =ContextCompat.getDrawable(this@MainActivity,R.drawable.shape_colorgradient_all_activities)
+                    }
+                }
+            }
+        })
     }
 
 
@@ -582,24 +638,6 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
         EasyPermissions.onRequestPermissionsResult(requestCode, permissions, grantResults, this)
     }
 
-//---------------------------------------------------converter section-------------------------------------------------------//
-
-    /*private suspend fun getBitmap(imageUri: String): Bitmap {
-        val loading = ImageLoader(this)
-        val request = ImageRequest.Builder(this)
-            .data(imageUri)
-            .build()
-
-        val result = (loading.execute(request) as SuccessResult).drawable
-        return (result as BitmapDrawable).bitmap
-    }*/
-
-
-    //---------------------------------------------------------------override sector--------------------------------------------
-//    override fun onPostResume() {
-//        super.onPostResume()
-//    }
-    //--------NetWork-----------------//
 
     override fun onResume() {
         super.onResume()
@@ -610,85 +648,6 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe { isConnectedToInternet ->
                 isInternetConnected = isConnectedToInternet
-                Log.d(TAG, "onResume: ${isConnectedToInternet.toString()}")
-                /*when (isConnectedToInternet) {
-                    true -> {
-                        localDataBaseViewModel.readAllContacts?.observe(
-                            this,
-                            Observer { contactList ->
-                                if (contactList.isEmpty()) {
-                                    trustedContactsViewModel.getContactsLiveData?.observe(
-                                        this,
-                                        Observer { onlineContact ->
-
-                                            lifecycleScope.launch {
-                                                val dialogue =
-                                                    SpotsDialog.Builder()
-                                                        .setContext(this@MainActivity)
-                                                        .setTheme(R.style.Custom)
-                                                        .setCancelable(true).build()
-                                                dialogue?.show()
-                                                for (list in onlineContact) {
-                                                    localDataBaseViewModel.addContacts(
-                                                        SOSContacts_Entity(
-                                                            list.Phone,
-                                                            list.Priority,
-                                                            list.Name,
-                                                            getBitmap(list.Image)
-                                                        )
-                                                    )
-                                                }
-
-                                                dialogue?.dismiss()
-
-                                            }
-                                        })
-                                    userInfoViewModel.getUserInfoLiveData?.observe(
-                                        this,
-                                        Observer { onlineUser ->
-                                            signInViewModel.collectUserInfoLiveData?.observe(
-                                                this,
-                                                Observer { userSignIn ->
-
-                                                    lifecycleScope.launch {
-                                                        val dialogue =
-                                                            SpotsDialog.Builder()
-                                                                .setContext(this@MainActivity)
-                                                                .setTheme(R.style.Custom)
-                                                                .setCancelable(true).build()
-                                                        dialogue?.show()
-                                                        if (onlineUser != null) {
-                                                            localDataBaseViewModel.addUserInfo(
-                                                                PersonalInfo_Entity(
-                                                                    0,
-                                                                    onlineUser.first_Name,
-                                                                    onlineUser.last_Name,
-                                                                    onlineUser.deactivate_Time,
-                                                                    onlineUser.active_Time,
-                                                                    userSignIn.email,
-                                                                    getBitmap(
-                                                                        userSignIn.imageUrl
-                                                                    )
-                                                                )
-                                                            )
-                                                        }
-                                                        dialogue?.dismiss()
-                                                    }
-                                                })
-                                        })
-                                } else {
-                                    //do nothing
-                                }
-
-
-                            })
-                    }
-                    else -> {
-
-                        Log.d(TAG, "onResume: No internet")
-
-                    }
-                }*/
             }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&

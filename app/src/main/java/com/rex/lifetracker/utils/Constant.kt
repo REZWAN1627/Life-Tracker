@@ -3,6 +3,10 @@ package com.rex.lifetracker.utils
 import com.rex.lifetracker.R
 
 object Constant {
+    const val ACTION_START_SERVICE = "ACTION_START_OR_RESUME_SERVICE"
+    const val ACTION_STOP_SERVICE = "ACTION_STOP_SERVICE"
+    const val ACTION_START_SERVICE_FROM_NOTIFICATION = "ACTION_START_FROM_NOTIFICATION"
+
 
     const val REQUEST_PERMISSION = 5
     const val RC_SIGN_IN = 1
