@@ -40,8 +40,11 @@ import com.rex.lifetracker.adapter.Contacts_RecyclerView
 import com.rex.lifetracker.databinding.ActivityMainBinding
 import com.rex.lifetracker.service.MotionDetectService
 import com.rex.lifetracker.service.UIChange
+import com.rex.lifetracker.utils.Constant
 import com.rex.lifetracker.utils.Constant.ACTION_START_SERVICE
 import com.rex.lifetracker.utils.Constant.ACTION_STOP_SERVICE
+import com.rex.lifetracker.utils.Constant.MOTION_ALERT_SYSTEM_NOTIFICATION_ID
+import com.rex.lifetracker.utils.Constant.MOTION_ALERT_SYSTEM_NOTIFICATION_ID2
 import com.rex.lifetracker.utils.Constant.REQUESTED_PERMISSION_CODE
 import com.rex.lifetracker.utils.Constant.TAG
 import com.rex.lifetracker.viewModel.LocalDataBaseVM.LocalDataBaseViewModel
@@ -83,7 +86,6 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
         setContentView(binding.root)
 
 
-        checkIntentGetExtra()
         requestPermission()
         initViewModel()
         initValue()
@@ -134,7 +136,8 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
 //                bottomSheet2.visibility = View.GONE
                 val notificationManager =
                     getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-                notificationManager.cancel(2)
+                notificationManager.cancel(MOTION_ALERT_SYSTEM_NOTIFICATION_ID)
+                notificationManager.cancel(MOTION_ALERT_SYSTEM_NOTIFICATION_ID2)
                 serviceStart()
 
                 // stopService(Intent(this@MainActivity, MotionDetectService::class.java))
@@ -162,7 +165,9 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
 
             //server stop button
             turnOffServices.setOnClickListener {
-
+                BottomSheetBehavior.from(bottomSheet).apply {
+                    state = BottomSheetBehavior.STATE_COLLAPSED
+                }
 
                 Toast.makeText(
                     this@MainActivity,
@@ -326,15 +331,7 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
 
     }
 
-    private fun checkIntentGetExtra() {
-        val serviceBoolean = intent.getStringExtra("Service")
-        Log.d(TAG, "checking :  -- > $serviceBoolean")
 
-        if (serviceBoolean == "RESTART") {
-            serviceStart()
-
-        }
-    }
 
 
     private fun setViewValue() {
@@ -496,9 +493,10 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
                 is UIChange.END -> {
                     //Toast.makeText(this, "Working out", Toast.LENGTH_SHORT).show()
                     binding.apply {
-                        BottomSheetBehavior.from(bottomSheet).state =
-                            BottomSheetBehavior.STATE_EXPANDED
+//                        BottomSheetBehavior.from(bottomSheet).state =
+//                            BottomSheetBehavior.STATE_EXPANDED
                         bottomSheet.visibility = View.VISIBLE
+                        bottomSheet2.visibility = View.GONE
                         progressBarCounter.clearAnimation()
                         countDownTimer?.cancel()
 
@@ -532,6 +530,12 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
             }
 
             override fun onFinish() {
+                binding.apply {
+                    BottomSheetBehavior.from(bottomSheet2).state = BottomSheetBehavior.STATE_COLLAPSED
+                    bottomSheet2.visibility = View.GONE
+                    BottomSheetBehavior.from(bottomSheet2).state = BottomSheetBehavior.STATE_COLLAPSED
+                    bottomSheet.visibility = View.VISIBLE
+                }
                 setProgressBarValues() // call to initialize the progress bar values
             }
         }.start()

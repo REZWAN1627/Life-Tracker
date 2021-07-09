@@ -1,5 +1,6 @@
 package com.rex.lifetracker.service
 
+import android.app.Notification
 import android.app.PendingIntent
 import android.content.Intent
 import android.hardware.Sensor
@@ -11,8 +12,7 @@ import android.net.Uri
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
-import androidx.lifecycle.LifecycleService
-import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.*
 import com.rex.lifetracker.R
 import com.rex.lifetracker.service.broadcast_receiver.SystemShakeAlert_broadcastReceiver
 import com.rex.lifetracker.utils.Constant.ACTION_START_SERVICE
@@ -20,22 +20,24 @@ import com.rex.lifetracker.utils.Constant.ACTION_START_SERVICE_FROM_NOTIFICATION
 import com.rex.lifetracker.utils.Constant.ACTION_STOP_SERVICE
 import com.rex.lifetracker.utils.Constant.ACTIVITY_REQUEST_CODE
 import com.rex.lifetracker.utils.Constant.BROADCAST_REQUEST_CODE
+import com.rex.lifetracker.utils.Constant.BROADCAST_REQUEST_CODE2
 import com.rex.lifetracker.utils.Constant.CANCEL_ACTION
+import com.rex.lifetracker.utils.Constant.CANCEL_ACTION2
+import com.rex.lifetracker.utils.Constant.CHANNEL_ALERT2_SYSTEM_ID
 import com.rex.lifetracker.utils.Constant.CHANNEL_ALERT_SYSTEM_ID
 import com.rex.lifetracker.utils.Constant.CHANNEL_ID
 import com.rex.lifetracker.utils.Constant.FOREGROUND_NOTIFICATION_ID
 import com.rex.lifetracker.utils.Constant.MOTION_ALERT_SYSTEM_NOTIFICATION_ID
+import com.rex.lifetracker.utils.Constant.MOTION_ALERT_SYSTEM_NOTIFICATION_ID2
 import com.rex.lifetracker.utils.Constant.STOP_SERVICE_ACTION
 import com.rex.lifetracker.utils.Constant.TAG
-import com.rex.lifetracker.view.MainActivity
 import com.rex.lifetracker.view.SOS
-import kotlinx.coroutines.*
 import kotlin.math.roundToInt
 import kotlin.math.sqrt
 
 
-class MotionDetectService : LifecycleService(), SensorEventListener {
-
+class MotionDetectService : LifecycleService(), SensorEventListener, LifecycleObserver {
+    var wasInBackground = false
 
     private var sensorManager: SensorManager? = null
     private var sensor: Sensor? = null
@@ -76,11 +78,9 @@ class MotionDetectService : LifecycleService(), SensorEventListener {
     var moveCount = 0
 
 
-
-
     override fun onCreate() {
         super.onCreate()
-
+        ProcessLifecycleOwner.get().lifecycle.addObserver(this)
         uiChange.postValue(UIChange.END)
         sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
         sensor = sensorManager?.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
@@ -100,8 +100,6 @@ class MotionDetectService : LifecycleService(), SensorEventListener {
         val uiChange = MutableLiveData<UIChange>()
 
     }
-
-
 
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -147,7 +145,7 @@ class MotionDetectService : LifecycleService(), SensorEventListener {
         sensorManager?.registerListener(this, sensor, SensorManager.SENSOR_DELAY_NORMAL)
 
 
-         val stopService = PendingIntent.getBroadcast(
+        val stopService = PendingIntent.getBroadcast(
             this,
             BROADCAST_REQUEST_CODE,
             Intent(this, SystemShakeAlert_broadcastReceiver::class.java).also {
@@ -173,7 +171,7 @@ class MotionDetectService : LifecycleService(), SensorEventListener {
 
 
         accelerationX = (event!!.values[0] * 1000).roundToInt() / 1000.0
-         // Log.d(TAG, "onSensorChanged: acceleration X -------> $accelerationX")
+        // Log.d(TAG, "onSensorChanged: acceleration X -------> $accelerationX")
         accelerationY = (event.values[1] * 1000).roundToInt() / 1000.0
         //Log.d(TAG, "onSensorChanged: acceleration Y -------> $accelerationY")
         accelerationZ = (event.values[2] * 1000).roundToInt() / 1000.0
@@ -272,7 +270,7 @@ class MotionDetectService : LifecycleService(), SensorEventListener {
                         mLinearAcceleration[Y] + mLinearAcceleration[Z] * mLinearAcceleration[Z]).toDouble()
             ).roundToInt()
                 .toFloat()
-      //  Log.d(TAG, "setCurrentAcceleration: current ---- $Current")
+        //  Log.d(TAG, "setCurrentAcceleration: current ---- $Current")
     }
 
     private fun getMaxCurrentLinearAcceleration(): Float {
@@ -311,6 +309,7 @@ class MotionDetectService : LifecycleService(), SensorEventListener {
             PendingIntent.FLAG_CANCEL_CURRENT
         )
 
+
         val pendingIntentSOS = PendingIntent.getActivity(
             this,
             ACTIVITY_REQUEST_CODE,
@@ -319,40 +318,97 @@ class MotionDetectService : LifecycleService(), SensorEventListener {
 
         )
 
+        if(!wasInBackground){
+            Log.d(TAG, "createAlertNotification: background not")
+            val notification = NotificationCompat.Builder(this, CHANNEL_ALERT_SYSTEM_ID)
+                .setSmallIcon(R.drawable.ic_baseline_add_alert_24)
+                .setContentTitle("Motion Detected")
+                .setContentText("After 30 Second the service will make calls")
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                //.setCategory(NotificationCompat.CATEGORY_PROGRESS)
+                .addAction(R.color.RED, "Cancel", pendingIntentCancel)
+                .setDeleteIntent(pendingIntentSOS)
+                .setWhen(System.currentTimeMillis())
+                .setUsesChronometer(true)
+                .setVibrate(
+                    longArrayOf(
+                        1000,
+                        1000,
+                        1000,
+                        1000,
+                        1000,
+                        1000,
+                        1000,
+                        1000
+                    )
+                )
+                .setShowWhen(true)
+                .setSound(
+                    Uri.parse(
+                        "android.resource://"
+                                + packageName + "/" + R.raw.siren
+                    )
+                )
+                .setOngoing(true)
+                .setTimeoutAfter(30000)
+                .build()
+            notification.flags = Notification.FLAG_INSISTENT
+            notificationManager.notify(MOTION_ALERT_SYSTEM_NOTIFICATION_ID, notification)
+        }else{
+            Log.d(TAG, "createAlertNotification: background yes")
+            val notification = NotificationCompat.Builder(this, CHANNEL_ALERT2_SYSTEM_ID)
+                .setSmallIcon(R.drawable.ic_baseline_add_alert_24)
+                .setContentTitle("Motion Detected")
+                .setContentText("After 30 Second the service will make calls")
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                //.setCategory(NotificationCompat.CATEGORY_PROGRESS)
+                .addAction(R.color.RED, "Cancel", pendingIntentCancel)
+                .setDeleteIntent(pendingIntentSOS)
+                .setWhen(System.currentTimeMillis())
+                .setUsesChronometer(true)
+                .setVibrate(
+                    longArrayOf(
+                        1000,
+                        1000,
+                        1000,
+                        1000,
+                        1000,
+                        1000,
+                        1000,
+                        1000
+                    )
+                )
+                .setShowWhen(true)
+                .setSound(
+                    Uri.parse(
+                        "android.resource://"
+                                + packageName + "/" + R.raw.siren
+                    )
+                )
+                .setOngoing(true)
+                .setTimeoutAfter(30000)
+                .build()
+            notification.flags = Notification.FLAG_INSISTENT
+            notificationManager.notify(MOTION_ALERT_SYSTEM_NOTIFICATION_ID2, notification)
+        }
 
-        val notification = NotificationCompat.Builder(this, CHANNEL_ALERT_SYSTEM_ID)
-            .setSmallIcon(R.drawable.ic_baseline_add_alert_24)
-            .setContentTitle("Motion Detected")
-            .setContentText("After 30 Second the service will make calls")
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            //.setCategory(NotificationCompat.CATEGORY_PROGRESS)
-            .addAction(R.color.RED, "Cancel", pendingIntentCancel)
-            .setDeleteIntent(pendingIntentSOS)
-            .setWhen(System.currentTimeMillis())
-            .setUsesChronometer(true)
-            .setVibrate(
-                longArrayOf(
-                    1000,
-                    1000,
-                    1000,
-                    1000,
-                    1000,
-                    1000,
-                    1000,
-                    1000
-                )
-            )
-            .setShowWhen(true)
-            .setSound(
-                Uri.parse(
-                    "android.resource://"
-                            + packageName + "/" + R.raw.siren
-                )
-            )
-            .setOngoing(true)
-            .setTimeoutAfter(30000)
-            .build()
-        notificationManager.notify(MOTION_ALERT_SYSTEM_NOTIFICATION_ID, notification)
+
+
+    }
+
+
+    @OnLifecycleEvent(Lifecycle.Event.ON_START)
+    fun onMoveToForeground() {
+        // app moved to foreground
+        Log.d(TAG, "onMoveToForeground: in forground")
+        wasInBackground = true
+    }
+
+    @OnLifecycleEvent(Lifecycle.Event.ON_STOP)
+    fun onMoveToBackground() {
+        // app moved to background
+        Log.d(TAG, "onMoveToBackground: in background")
+        wasInBackground = false
     }
 
 
