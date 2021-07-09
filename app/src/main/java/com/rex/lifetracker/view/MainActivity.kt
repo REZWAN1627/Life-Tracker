@@ -19,6 +19,7 @@ import android.widget.RadioButton
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.view.GravityCompat
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.NavController
@@ -71,10 +72,13 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
     private lateinit var userActiveTime: String
     private var isInternetConnected = false
     private var internetDisposable: Disposable? = null
+    private var timeCountInMilliSeconds = (30 * 1000).toLong()
+    private var countDownTimer: CountDownTimer? = null
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
@@ -84,7 +88,6 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
         initViewModel()
         initValue()
         setViewValue()
-
         setObservers()
 
 
@@ -132,8 +135,9 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
                 val notificationManager =
                     getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
                 notificationManager.cancel(2)
+                serviceStart()
 
-                stopService(Intent(this@MainActivity, MotionDetectService::class.java))
+                // stopService(Intent(this@MainActivity, MotionDetectService::class.java))
             }
 
             //controlling nav drawer
@@ -326,13 +330,9 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
         val serviceBoolean = intent.getStringExtra("Service")
         Log.d(TAG, "checking :  -- > $serviceBoolean")
 
-        if (serviceBoolean == "YES") {
-            Log.e("TAG", "is called from SOS")
-            sosActivityState = true
-            stopService(Intent(this, MotionDetectService::class.java))
-        } else {
-            startForegroundService(Intent(this, MotionDetectService::class.java))
-            Log.e("TAG", "not calling from sos")
+        if (serviceBoolean == "RESTART") {
+            serviceStart()
+
         }
     }
 
@@ -474,7 +474,7 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
 
     private fun serviceStart() {
         //Toast.makeText(this, "Service Started", Toast.LENGTH_SHORT).show()
-        startForegroundService(Intent(this, MotionDetectService::class.java).apply {
+        startService(Intent(this, MotionDetectService::class.java).apply {
             this.action = ACTION_START_SERVICE
         })
         Log.d(TAG, "serviceStart: Started Services")
@@ -485,7 +485,7 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
             when (it) {
                 is UIChange.START -> {
                     binding.apply {
-//                        bottomSheet.setBackgroundColor(Color.RED)
+                        start()
                         BottomSheetBehavior.from(bottomSheet).state =
                             BottomSheetBehavior.STATE_COLLAPSED
                         bottomSheet2.visibility = View.VISIBLE
@@ -494,11 +494,15 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
                     }
                 }
                 is UIChange.END -> {
-                    Toast.makeText(this, "Working out", Toast.LENGTH_SHORT).show()
+                    //Toast.makeText(this, "Working out", Toast.LENGTH_SHORT).show()
                     binding.apply {
                         BottomSheetBehavior.from(bottomSheet).state =
                             BottomSheetBehavior.STATE_EXPANDED
                         bottomSheet.visibility = View.VISIBLE
+                        progressBarCounter.clearAnimation()
+                        countDownTimer?.cancel()
+
+
 //                        BottomSheetBehavior.from(bottomSheet2).state = BottomSheetBehavior.STATE_HIDDEN
                         bottomSheet2.visibility = View.GONE
                         //bottomSheet.background =ContextCompat.getDrawable(this@MainActivity,R.drawable.shape_colorgradient_all_activities)
@@ -506,6 +510,36 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
                 }
             }
         })
+
+
+    }
+
+    private fun start() {
+        setTimerValues()
+        startCountDownTimer()
+    }
+
+    private fun setTimerValues() {
+        // assigning values after converting to milliseconds
+        timeCountInMilliSeconds = (30 * 1000).toLong()
+        setProgressBarValues()
+    }
+
+    private fun startCountDownTimer() {
+        countDownTimer = object : CountDownTimer(timeCountInMilliSeconds, 50) {
+            override fun onTick(millisUntilFinished: Long) {
+                binding.progressBarCounter.progress = 600 - (millisUntilFinished / 50).toInt()
+            }
+
+            override fun onFinish() {
+                setProgressBarValues() // call to initialize the progress bar values
+            }
+        }.start()
+    }
+
+    private fun setProgressBarValues() {
+        binding.progressBarCounter.max = timeCountInMilliSeconds.toInt() / 50
+        binding.progressBarCounter.progress = timeCountInMilliSeconds.toInt() / 1000
     }
 
 
@@ -523,6 +557,7 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
             Manifest.permission.ACCESS_COARSE_LOCATION,
             Manifest.permission.ACCESS_FINE_LOCATION
         )
+
     }
 
     private fun hasPermission() =
@@ -601,6 +636,7 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
 
             }
         }
+
     }
 
     override fun onRequestPermissionsResult(

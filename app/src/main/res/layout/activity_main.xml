@@ -270,30 +270,45 @@
                     android:textSize="@dimen/_13ssp"
                     android:padding="@dimen/_10sdp"/>
 
-                <RelativeLayout
-                    android:id="@+id/stopServicesBeforeCall"
-                    android:rotation="-55"
-                    android:layout_width="@dimen/_100sdp"
-                    android:layout_height="@dimen/_100sdp"
-                    android:background="@drawable/shape_stroke_ring"
-                    android:layout_gravity="center">
-                    <RelativeLayout
-                        android:rotation="55"
-                        android:layout_width="@dimen/_90sdp"
-                        android:layout_height="@dimen/_90sdp"
-                        android:background="@drawable/shape_round_red"
-                        android:layout_centerInParent="true">
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Stop"
-                            android:textSize="@dimen/_25ssp"
-                            android:textStyle="bold"
-                            android:textColor="@color/white"
-                            android:layout_centerInParent="true"/>
-                    </RelativeLayout>
-                </RelativeLayout>
-                
+              <androidx.constraintlayout.widget.ConstraintLayout
+                  android:layout_width="match_parent"
+                  android:id="@+id/stopServicesBeforeCall"
+                  android:layout_height="wrap_content">
+
+                  <RelativeLayout
+                      android:layout_width="@dimen/_90sdp"
+                      android:layout_height="@dimen/_90sdp"
+                      android:layout_centerInParent="true"
+                      android:background="@drawable/shape_round_red"
+                      app:layout_constraintBottom_toBottomOf="@+id/progress_barCounter"
+                      app:layout_constraintEnd_toEndOf="@+id/progress_barCounter"
+                      app:layout_constraintStart_toStartOf="@+id/progress_barCounter"
+                      app:layout_constraintTop_toTopOf="@+id/progress_barCounter">
+
+                      <TextView
+                          android:layout_width="wrap_content"
+                          android:layout_height="wrap_content"
+                          android:layout_centerInParent="true"
+                          android:text="Stop"
+                          android:textColor="@color/white"
+                          android:textSize="@dimen/_25ssp"
+                          android:textStyle="bold" />
+                  </RelativeLayout>
+
+
+                  <ProgressBar
+                      android:id="@+id/progress_barCounter"
+                      android:progressDrawable="@drawable/shape_progressbar"
+                      android:indeterminateOnly="false"
+                      android:layout_width="@dimen/_135sdp"
+                      android:layout_height="@dimen/_135sdp"
+                      app:layout_constraintBottom_toBottomOf="parent"
+                      app:layout_constraintLeft_toLeftOf="parent"
+                      app:layout_constraintRight_toRightOf="parent"
+                      app:layout_constraintTop_toTopOf="parent"
+                      tools:progress="20" />
+              </androidx.constraintlayout.widget.ConstraintLayout>
+
                 <Space
                     android:layout_width="0dp"
                     android:layout_height="@dimen/_20sdp"/>
@@ -450,6 +465,8 @@
 
 
 </androidx.drawerlayout.widget.DrawerLayout>
+
+
 
 
 

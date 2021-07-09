@@ -9,6 +9,7 @@ import android.widget.Toast
 import com.rex.lifetracker.service.MotionDetectService
 import com.rex.lifetracker.utils.Constant
 import com.rex.lifetracker.utils.Constant.CANCEL_ACTION
+import com.rex.lifetracker.utils.Constant.STOP_SERVICE_ACTION
 import com.rex.lifetracker.utils.Constant.TAG
 
 class SystemShakeAlert_broadcastReceiver : BroadcastReceiver() {
@@ -21,10 +22,15 @@ class SystemShakeAlert_broadcastReceiver : BroadcastReceiver() {
                 val notificationManager =
                     context!!.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
                 notificationManager.cancel(2)
-                context.startForegroundService(Intent(context, MotionDetectService::class.java).apply {
+                context.startService(Intent(context, MotionDetectService::class.java).apply {
                     this.action = Constant.ACTION_START_SERVICE_FROM_NOTIFICATION
                 })
 
+            }
+            STOP_SERVICE_ACTION->{
+                context?.startService(Intent(context, MotionDetectService::class.java).apply {
+                    this.action = Constant.ACTION_STOP_SERVICE
+                })
             }
         }
 

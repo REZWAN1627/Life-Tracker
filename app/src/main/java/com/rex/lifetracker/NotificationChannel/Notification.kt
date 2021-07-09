@@ -24,7 +24,7 @@ class App : Application() {
             val serviceChannel = NotificationChannel(
                 CHANNEL_ALERT_SYSTEM_ID,
                 "ALERT SYSTEM",
-                NotificationManager.IMPORTANCE_HIGH
+                NotificationManager.IMPORTANCE_DEFAULT
             )
             serviceChannel.description = "SYSTEM ALERT"
             val manager = getSystemService(

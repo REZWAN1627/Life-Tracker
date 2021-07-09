@@ -25,9 +25,11 @@ import com.rex.lifetracker.utils.Constant.CHANNEL_ALERT_SYSTEM_ID
 import com.rex.lifetracker.utils.Constant.CHANNEL_ID
 import com.rex.lifetracker.utils.Constant.FOREGROUND_NOTIFICATION_ID
 import com.rex.lifetracker.utils.Constant.MOTION_ALERT_SYSTEM_NOTIFICATION_ID
+import com.rex.lifetracker.utils.Constant.STOP_SERVICE_ACTION
 import com.rex.lifetracker.utils.Constant.TAG
 import com.rex.lifetracker.view.MainActivity
 import com.rex.lifetracker.view.SOS
+import kotlinx.coroutines.*
 import kotlin.math.roundToInt
 import kotlin.math.sqrt
 
@@ -74,8 +76,12 @@ class MotionDetectService : LifecycleService(), SensorEventListener {
     var moveCount = 0
 
 
+
+
     override fun onCreate() {
         super.onCreate()
+
+        uiChange.postValue(UIChange.END)
         sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
         sensor = sensorManager?.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
         notificationManager = NotificationManagerCompat.from(this)
@@ -83,6 +89,7 @@ class MotionDetectService : LifecycleService(), SensorEventListener {
     }
 
     override fun onDestroy() {
+
         sensorManager?.unregisterListener(this)
         stopSelf()
         super.onDestroy()
@@ -91,7 +98,10 @@ class MotionDetectService : LifecycleService(), SensorEventListener {
 
     companion object {
         val uiChange = MutableLiveData<UIChange>()
+
     }
+
+
 
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -101,16 +111,25 @@ class MotionDetectService : LifecycleService(), SensorEventListener {
                 ACTION_START_SERVICE -> {
                     //timerEvent.postValue(UIChange.START)
                     ForegroundStart()
+                    uiChange.postValue(UIChange.END)
+
+
                     Log.d(TAG, "onStartCommand: Service is Started")
                 }
                 ACTION_STOP_SERVICE -> {
                     uiChange.postValue(UIChange.END)
+                    sensorManager?.unregisterListener(this)
+
+
+                    stopForeground(true)
                     stopSelf()
                     Log.d(TAG, "onStartCommand: services is sttoped")
                 }
                 ACTION_START_SERVICE_FROM_NOTIFICATION -> {
                     ForegroundStart()
                     uiChange.postValue(UIChange.END)
+
+
                 }
                 else -> {
                     //do nothing
@@ -127,12 +146,14 @@ class MotionDetectService : LifecycleService(), SensorEventListener {
     private fun ForegroundStart() {
         sensorManager?.registerListener(this, sensor, SensorManager.SENSOR_DELAY_NORMAL)
 
-        val intent = Intent(this, MainActivity::class.java)
-        intent.putExtra("Service", "YES")
-        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
-        val pendingIntent = PendingIntent.getActivity(
+
+         val stopService = PendingIntent.getBroadcast(
             this,
-            0, intent, PendingIntent.FLAG_UPDATE_CURRENT
+            BROADCAST_REQUEST_CODE,
+            Intent(this, SystemShakeAlert_broadcastReceiver::class.java).also {
+                it.action = STOP_SERVICE_ACTION
+            },
+            PendingIntent.FLAG_CANCEL_CURRENT
         )
 
 
@@ -140,7 +161,7 @@ class MotionDetectService : LifecycleService(), SensorEventListener {
             .setContentTitle("Life Tracker is Activated")
             .setContentText("Drive Safe, Keep your eyes on the road")
             .setSmallIcon(R.drawable.ic_baseline_directions_bike_24)
-            .addAction(R.color.RED, "Stop Life Tracking", pendingIntent)
+            .addAction(R.color.RED, "Stop Life Tracking", stopService)
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION))
             // .setContentIntent(pendingIntent)
@@ -152,7 +173,7 @@ class MotionDetectService : LifecycleService(), SensorEventListener {
 
 
         accelerationX = (event!!.values[0] * 1000).roundToInt() / 1000.0
-          Log.d(TAG, "onSensorChanged: acceleration X -------> $accelerationX")
+         // Log.d(TAG, "onSensorChanged: acceleration X -------> $accelerationX")
         accelerationY = (event.values[1] * 1000).roundToInt() / 1000.0
         //Log.d(TAG, "onSensorChanged: acceleration Y -------> $accelerationY")
         accelerationZ = (event.values[2] * 1000).roundToInt() / 1000.0
@@ -278,6 +299,7 @@ class MotionDetectService : LifecycleService(), SensorEventListener {
 
     private fun createAlertNotification() {
         uiChange.postValue(UIChange.START)
+
         sensorManager?.unregisterListener(this)
         Log.d(TAG, "createAlertNotification: is called")
         val pendingIntentCancel = PendingIntent.getBroadcast(
@@ -332,4 +354,6 @@ class MotionDetectService : LifecycleService(), SensorEventListener {
             .build()
         notificationManager.notify(MOTION_ALERT_SYSTEM_NOTIFICATION_ID, notification)
     }
+
+
 }

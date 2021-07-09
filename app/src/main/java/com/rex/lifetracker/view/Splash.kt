@@ -11,11 +11,8 @@ import androidx.lifecycle.ViewModelProvider
 import com.github.pwittchen.reactivenetwork.library.rx2.ReactiveNetwork
 import com.rex.lifetracker.databinding.ActivitySplashBinding
 import com.rex.lifetracker.utils.Constant.TAG
-import com.rex.lifetracker.view.userUi.UserInfo
 import com.rex.lifetracker.viewModel.LocalDataBaseVM.LocalDataBaseViewModel
 import com.rex.lifetracker.viewModel.firebaseViewModel.SignInViewModel
-import com.rex.lifetracker.viewModel.firebaseViewModel.TrustedContactsViewModel
-import com.rex.lifetracker.viewModel.firebaseViewModel.UserInfoViewModel
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.Disposable
 import io.reactivex.schedulers.Schedulers
@@ -64,14 +61,14 @@ class Splash : AppCompatActivity() {
     }
 
     private fun goToMainActivity() {
-        localDataBaseViewModel.readAllContacts.observe(this,{list ->
-            if (list.isEmpty()){
+        localDataBaseViewModel.readAllContacts.observe(this, { list ->
+            if (list.isEmpty()) {
                 Handler(Looper.getMainLooper()).postDelayed({
                     startActivity(Intent(this, SignIn::class.java).putExtra("Nuke", "NO"))
                     finish()
 
                 }, 1000)
-            }else{
+            } else {
                 Handler(Looper.getMainLooper()).postDelayed({
                     startActivity(
                         Intent(
@@ -84,7 +81,6 @@ class Splash : AppCompatActivity() {
                 }, 1000)
             }
         })
-
 
 
     }
@@ -125,7 +121,12 @@ class Splash : AppCompatActivity() {
                                 Log.d(TAG, "localdatabase size -> ${list.size}")
                                 if (list.isEmpty()) {
                                     Handler(Looper.getMainLooper()).postDelayed({
-                                        startActivity(Intent(this, SignIn::class.java).putExtra("Nuke", "NO"))
+                                        startActivity(
+                                            Intent(
+                                                this,
+                                                SignIn::class.java
+                                            ).putExtra("Nuke", "NO")
+                                        )
                                         finish()
 
                                     }, 1000)

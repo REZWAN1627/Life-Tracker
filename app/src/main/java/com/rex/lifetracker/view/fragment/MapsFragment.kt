@@ -92,7 +92,7 @@ class MapsFragment : Fragment(R.layout.fragment_maps), OnMapReadyCallback {
                         )
                         mGoogleMap.addMarker(
                             MarkerOptions().position(LatLng(currentLocation.latitude, currentLocation.longitude)).icon(
-                                bitmapDescriptorFromVector(requireContext(),R.drawable.ic_baseline_directions_bike_24))
+                                bitmapDescriptorFromVector(requireContext(),R.drawable.ic_baseline_directions_bike_245))
                                 .anchor(0.5f,0.5f)
 
                             )
