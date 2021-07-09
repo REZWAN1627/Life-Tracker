@@ -20,9 +20,7 @@ import com.rex.lifetracker.utils.Constant.ACTION_START_SERVICE_FROM_NOTIFICATION
 import com.rex.lifetracker.utils.Constant.ACTION_STOP_SERVICE
 import com.rex.lifetracker.utils.Constant.ACTIVITY_REQUEST_CODE
 import com.rex.lifetracker.utils.Constant.BROADCAST_REQUEST_CODE
-import com.rex.lifetracker.utils.Constant.BROADCAST_REQUEST_CODE2
 import com.rex.lifetracker.utils.Constant.CANCEL_ACTION
-import com.rex.lifetracker.utils.Constant.CANCEL_ACTION2
 import com.rex.lifetracker.utils.Constant.CHANNEL_ALERT2_SYSTEM_ID
 import com.rex.lifetracker.utils.Constant.CHANNEL_ALERT_SYSTEM_ID
 import com.rex.lifetracker.utils.Constant.CHANNEL_ID
@@ -318,7 +316,7 @@ class MotionDetectService : LifecycleService(), SensorEventListener, LifecycleOb
 
         )
 
-        if(!wasInBackground){
+        if (!wasInBackground) {
             Log.d(TAG, "createAlertNotification: background not")
             val notification = NotificationCompat.Builder(this, CHANNEL_ALERT_SYSTEM_ID)
                 .setSmallIcon(R.drawable.ic_baseline_add_alert_24)
@@ -327,6 +325,7 @@ class MotionDetectService : LifecycleService(), SensorEventListener, LifecycleOb
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 //.setCategory(NotificationCompat.CATEGORY_PROGRESS)
                 .addAction(R.color.RED, "Cancel", pendingIntentCancel)
+                .setFullScreenIntent(pendingIntentCancel, true)
                 .setDeleteIntent(pendingIntentSOS)
                 .setWhen(System.currentTimeMillis())
                 .setUsesChronometer(true)
@@ -349,12 +348,14 @@ class MotionDetectService : LifecycleService(), SensorEventListener, LifecycleOb
                                 + packageName + "/" + R.raw.siren
                     )
                 )
+                .setAutoCancel(false)
                 .setOngoing(true)
                 .setTimeoutAfter(30000)
                 .build()
-            notification.flags = Notification.FLAG_INSISTENT
+            notification.flags = notification.flags or Notification.FLAG_INSISTENT
+            notification.flags = notification.flags or Notification.FLAG_NO_CLEAR
             notificationManager.notify(MOTION_ALERT_SYSTEM_NOTIFICATION_ID, notification)
-        }else{
+        } else {
             Log.d(TAG, "createAlertNotification: background yes")
             val notification = NotificationCompat.Builder(this, CHANNEL_ALERT2_SYSTEM_ID)
                 .setSmallIcon(R.drawable.ic_baseline_add_alert_24)
@@ -363,6 +364,7 @@ class MotionDetectService : LifecycleService(), SensorEventListener, LifecycleOb
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 //.setCategory(NotificationCompat.CATEGORY_PROGRESS)
                 .addAction(R.color.RED, "Cancel", pendingIntentCancel)
+                .setFullScreenIntent(pendingIntentCancel, true)
                 .setDeleteIntent(pendingIntentSOS)
                 .setWhen(System.currentTimeMillis())
                 .setUsesChronometer(true)
@@ -385,13 +387,17 @@ class MotionDetectService : LifecycleService(), SensorEventListener, LifecycleOb
                                 + packageName + "/" + R.raw.siren
                     )
                 )
+                .setAutoCancel(false)
                 .setOngoing(true)
                 .setTimeoutAfter(30000)
                 .build()
-            notification.flags = Notification.FLAG_INSISTENT
+
+
+            // notification.flags= Notification.FLAG_ONGOING_EVENT
+            notification.flags = notification.flags or Notification.FLAG_INSISTENT
+            notification.flags = notification.flags or Notification.FLAG_NO_CLEAR
             notificationManager.notify(MOTION_ALERT_SYSTEM_NOTIFICATION_ID2, notification)
         }
-
 
 
     }
