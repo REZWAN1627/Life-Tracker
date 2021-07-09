@@ -44,10 +44,6 @@ import com.rex.lifetracker.utils.Constant.ACTION_STOP_SERVICE
 import com.rex.lifetracker.utils.Constant.REQUESTED_PERMISSION_CODE
 import com.rex.lifetracker.utils.Constant.TAG
 import com.rex.lifetracker.viewModel.LocalDataBaseVM.LocalDataBaseViewModel
-import com.rex.lifetracker.viewModel.firebaseViewModel.SignInViewModel
-import com.rex.lifetracker.viewModel.firebaseViewModel.SimSlotViewModel
-import com.rex.lifetracker.viewModel.firebaseViewModel.TrustedContactsViewModel
-import com.rex.lifetracker.viewModel.firebaseViewModel.UserInfoViewModel
 import com.vmadalin.easypermissions.EasyPermissions
 import com.vmadalin.easypermissions.dialogs.SettingsDialog
 import dmax.dialog.SpotsDialog
@@ -61,7 +57,6 @@ import java.util.concurrent.TimeUnit
 
 class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
     private lateinit var binding: ActivityMainBinding
-    private lateinit var userInfoViewModel: UserInfoViewModel
     private lateinit var startDateValue: Date
     private val simpleDateFormat: SimpleDateFormat = SimpleDateFormat("dd.MM.yyyy")
     private lateinit var endDateValue: Date
@@ -71,10 +66,7 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
     private lateinit var navHostFragment: NavHostFragment
     private lateinit var navController: NavController
     private lateinit var mAdapter: Contacts_RecyclerView
-    private lateinit var trustedContactsViewModel: TrustedContactsViewModel
     private lateinit var googleSignInClient: GoogleSignInClient
-    private lateinit var simSlotViewModel: SimSlotViewModel
-    private lateinit var signInViewModel: SignInViewModel
     private lateinit var localDataBaseViewModel: LocalDataBaseViewModel
     private lateinit var userActiveTime: String
     private var isInternetConnected = false
@@ -129,22 +121,19 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
                 }
             }
 
-
-
-
             //warning bottom sheet
             stopServicesBeforeCall.setOnClickListener {
 
 //                bottomSheet.visibility = View.VISIBLE
-               BottomSheetBehavior.from(bottomSheet2).state = BottomSheetBehavior.STATE_COLLAPSED
+                BottomSheetBehavior.from(bottomSheet2).state = BottomSheetBehavior.STATE_COLLAPSED
                 bottomSheet2.visibility = View.GONE
                 BottomSheetBehavior.from(bottomSheet).state = BottomSheetBehavior.STATE_EXPANDED
 //                bottomSheet2.visibility = View.GONE
                 val notificationManager =
-                   getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                    getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
                 notificationManager.cancel(2)
 
-                stopService(Intent(this@MainActivity,MotionDetectService::class.java))
+                stopService(Intent(this@MainActivity, MotionDetectService::class.java))
             }
 
             //controlling nav drawer
@@ -169,7 +158,6 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
 
             //server stop button
             turnOffServices.setOnClickListener {
-
 
 
                 Toast.makeText(
@@ -322,15 +310,7 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
 
 
         })
-        trustedContactsViewModel = ViewModelProvider(this).get(TrustedContactsViewModel::class.java)
-        userInfoViewModel = ViewModelProvider(
-            this,
-            ViewModelProvider.AndroidViewModelFactory.getInstance(this.application)
-        ).get(
-            UserInfoViewModel::class.java
-        )
 
-        simSlotViewModel = ViewModelProvider(this).get(SimSlotViewModel::class.java)
 
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
             .requestIdToken(getString(R.string.default_web_client_id))
@@ -338,15 +318,6 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
             .build()
 
         googleSignInClient = GoogleSignIn.getClient(this, gso)
-
-        signInViewModel = ViewModelProvider(
-            this,
-            ViewModelProvider.AndroidViewModelFactory.getInstance(this.application)
-        ).get(
-            SignInViewModel::class.java
-        )
-
-        signInViewModel.collectUserData()
 
 
     }
@@ -515,15 +486,18 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
                 is UIChange.START -> {
                     binding.apply {
 //                        bottomSheet.setBackgroundColor(Color.RED)
-                        BottomSheetBehavior.from(bottomSheet).state = BottomSheetBehavior.STATE_COLLAPSED
+                        BottomSheetBehavior.from(bottomSheet).state =
+                            BottomSheetBehavior.STATE_COLLAPSED
                         bottomSheet2.visibility = View.VISIBLE
-                        BottomSheetBehavior.from(bottomSheet2).state = BottomSheetBehavior.STATE_EXPANDED
+                        BottomSheetBehavior.from(bottomSheet2).state =
+                            BottomSheetBehavior.STATE_EXPANDED
                     }
                 }
                 is UIChange.END -> {
                     Toast.makeText(this, "Working out", Toast.LENGTH_SHORT).show()
                     binding.apply {
-                        BottomSheetBehavior.from(bottomSheet).state = BottomSheetBehavior.STATE_EXPANDED
+                        BottomSheetBehavior.from(bottomSheet).state =
+                            BottomSheetBehavior.STATE_EXPANDED
                         bottomSheet.visibility = View.VISIBLE
 //                        BottomSheetBehavior.from(bottomSheet2).state = BottomSheetBehavior.STATE_HIDDEN
                         bottomSheet2.visibility = View.GONE
