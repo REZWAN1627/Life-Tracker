@@ -140,7 +140,7 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
                 notificationManager.cancel(MOTION_ALERT_SYSTEM_NOTIFICATION_ID2)
                 serviceStart()
 
-                // stopService(Intent(this@MainActivity, MotionDetectService::class.java))
+                // stopService(Intent(this@MainActivity2, MotionDetectService::class.java))
             }
 
             //controlling nav drawer
@@ -503,7 +503,7 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
 
 //                        BottomSheetBehavior.from(bottomSheet2).state = BottomSheetBehavior.STATE_HIDDEN
                         bottomSheet2.visibility = View.GONE
-                        //bottomSheet.background =ContextCompat.getDrawable(this@MainActivity,R.drawable.shape_colorgradient_all_activities)
+                        //bottomSheet.background =ContextCompat.getDrawable(this@MainActivity2,R.drawable.shape_colorgradient_all_activities)
                     }
                 }
             }

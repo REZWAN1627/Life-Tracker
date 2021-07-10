@@ -33,6 +33,7 @@ class Splash : AppCompatActivity() {
         initSplashViewModel()
 
 
+
     }
 
     private fun initSplashViewModel() {

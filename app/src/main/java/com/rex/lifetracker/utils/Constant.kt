@@ -30,4 +30,10 @@ object Constant {
     const val MOTION_ALERT_SYSTEM_NOTIFICATION_ID2 = 3
     const val GPS_AUTO_START_REQUEST_CODE = 1627
     const val DEFAULT_IMAGE_URI = R.drawable.defaultimage
+
+
+    //expreriment
+    const val ACTION_START_OR_RESUME_SERVICES = "ACTION_START_OR_RESUME_SERVICES"
+    const val ACTION_PAUSE_SERVICES= "ACTION_PAUSE_SERVICES"
+    const val ACTION_STOP_SERVICES = "ACTION_STOP_SERVICES"
 }
