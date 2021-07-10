@@ -348,8 +348,6 @@ class MotionDetectService : LifecycleService(), SensorEventListener, LifecycleOb
                                 + packageName + "/" + R.raw.siren
                     )
                 )
-                .setAutoCancel(false)
-                .setOngoing(true)
                 .setTimeoutAfter(30000)
                 .build()
             notification.flags = notification.flags or Notification.FLAG_INSISTENT
@@ -387,8 +385,6 @@ class MotionDetectService : LifecycleService(), SensorEventListener, LifecycleOb
                                 + packageName + "/" + R.raw.siren
                     )
                 )
-                .setAutoCancel(false)
-                .setOngoing(true)
                 .setTimeoutAfter(30000)
                 .build()
 
