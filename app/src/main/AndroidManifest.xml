@@ -21,6 +21,7 @@
     <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
 
+
     <uses-feature
         android:name="android.hardware.sensor.accelerometer"
         android:required="true" />
@@ -37,8 +38,6 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.LifeTracker"
         android:usesCleartextTraffic="true">
-        <activity android:name=".view.userUi.MainActivity2"></activity>
-        <activity android:name=".view.MainActivity2" />
         <activity android:name=".view.ManageTrustedContactsList" />
         <activity android:name=".view.userUi.EditProfile" />
         <!--
@@ -66,9 +65,19 @@
             </intent-filter>
         </activity>
 
-        <service android:name=".service.MotionDetectService" />
+        <service
+            android:name=".service.MotionDetectService"
+            android:foregroundServiceType="location" />
 
         <receiver android:name=".service.broadcast_receiver.SystemShakeAlert_broadcastReceiver" />
+        <receiver android:name=".service.broadcast_receiver.GpsLocationReceiver"
+            android:exported="false" >
+            <intent-filter>
+                <action android:name="android.location.PROVIDERS_CHANGED" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </receiver>
+
 
         <activity
             android:name="com.theartofdev.edmodo.cropper.CropImageActivity"

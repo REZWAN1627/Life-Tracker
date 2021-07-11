@@ -1,261 +1,119 @@
 package com.rex.lifetracker.view.fragment
 
 import android.Manifest
-import android.app.Activity
+import android.annotation.SuppressLint
 import android.content.Context
-import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
 import android.location.Location
 import android.os.Bundle
+import android.os.Looper
 import android.util.Log
 import android.view.View
-import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
-import com.google.android.gms.common.api.ResolvableApiException
+import androidx.lifecycle.Observer
 import com.google.android.gms.location.*
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
-import com.google.android.gms.maps.OnMapReadyCallback
-import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.*
-import com.google.android.gms.tasks.RuntimeExecutionException
-import com.rex.lifetracker.R
 import com.rex.lifetracker.databinding.FragmentMapsBinding
-import com.rex.lifetracker.utils.Constant.GPS_AUTO_START_REQUEST_CODE
-import com.rex.lifetracker.utils.Constant.REQUEST_PERMISSION
+import com.rex.lifetracker.service.MotionDetectService
+import com.rex.lifetracker.service.Polyline
+import com.rex.lifetracker.utils.Constant
 import com.rex.lifetracker.utils.Constant.TAG
+import com.rex.lifetracker.R
 
 
-class MapsFragment : Fragment(R.layout.fragment_maps), OnMapReadyCallback {
-    private lateinit var fusedLocationProviderClient: FusedLocationProviderClient
-    private lateinit var mGoogleMap: GoogleMap
-    private val malaysiaCoordinate = LatLng(4.2105, 101.9758)
-    private lateinit var currentLocation: Location
+class MapsFragment : Fragment(R.layout.fragment_maps) {
+    private var map: GoogleMap? = null
+    private var isTracking = false
+    private var pathPoints = mutableListOf<Polyline>()
+    private lateinit var binding: FragmentMapsBinding
     // LatLng(4.2105, 101.9758)\
     //LatLng(25.0433371, 88.7622475)
 
+    var fusedLocationProviderClient: FusedLocationProviderClient? = null
+    var locationRequest: LocationRequest? = null
 
+    var userLocationMarker: Marker? = null
+    var userLocationAccuracyCircle: Circle? = null
+
+
+    @SuppressLint("MissingPermission")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        val binding = FragmentMapsBinding.bind(view)
-
-        val mapFragment =
-            childFragmentManager.findFragmentById(R.id.map) as SupportMapFragment?
-        mapFragment?.getMapAsync(this)
+        binding = FragmentMapsBinding.bind(view)
+        binding.mapView.onCreate(savedInstanceState)
         fusedLocationProviderClient =
-            LocationServices.getFusedLocationProviderClient(requireContext())
+            LocationServices.getFusedLocationProviderClient(requireContext());
 
+        locationRequest = LocationRequest.create().setInterval(500).setFastestInterval(500)
+            .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
 
-        Log.d(TAG, "Fragmnet Oncreate: is called from")
-        getCurrentLocation()
+        binding.apply {
 
+            mapView.getMapAsync {
+                map = it
 
-    }
-
-
-    fun getCurrentLocation() {
-
-        if (ActivityCompat.checkSelfPermission(
-                requireContext(),
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
-                requireContext(),
-                Manifest.permission.ACCESS_COARSE_LOCATION
-            ) != PackageManager.PERMISSION_GRANTED
-        ) {
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
-            return
-        } else {
-
-            fusedLocationProviderClient.lastLocation
-                .addOnSuccessListener { it ->
-                    // Got last known location. In some rare situations this can be null.
-                    if (it != null) {
-                        Log.d(TAG, "getCurrentLocation: ${it.latitude},${it.longitude}")
-                        currentLocation = it
-                        animateZoomInCamera(
-                            LatLng(
-                                currentLocation.latitude,
-                                currentLocation.longitude
-                            )
-                        )
-                        mGoogleMap.addMarker(
-                            MarkerOptions().position(LatLng(currentLocation.latitude, currentLocation.longitude)).icon(
-                                bitmapDescriptorFromVector(requireContext(),R.drawable.ic_baseline_directions_bike_245))
-                                .anchor(0.5f,0.5f)
-
-                            )
-                        mGoogleMap.addCircle(CircleOptions().center(LatLng(currentLocation.latitude, currentLocation.longitude))
-                            .radius(100.5)
-                            .fillColor(Color.argb(100, 130, 182, 228))
-                            .strokeColor(Color.argb(255, 130, 182, 228))
-                            .strokeWidth(2.0f)
-
-                        )
-
-
-
-
-                    } else {
-
-                        val builder = LocationSettingsRequest.Builder()
-                            .addLocationRequest(reqSetting)
-
-                        val client = LocationServices.getSettingsClient(requireContext())
-                        client.checkLocationSettings(builder.build())
-                            .addOnCompleteListener { task ->
-                                try {
-                                    val state: LocationSettingsStates =
-                                        task.result!!.locationSettingsStates
-                                    Log.d(TAG, task.result!!.toString())
-                                    Log.e(
-                                        TAG, "LocationSettings: \n" +
-                                                " GPS present: ${state.isGpsPresent} \n" +
-                                                " GPS usable: ${state.isGpsUsable} \n" +
-                                                " Location present: " +
-                                                "${state.isLocationPresent} \n" +
-                                                " Location usable: " +
-                                                "${state.isLocationUsable} \n" +
-                                                " Network Location present: " +
-                                                "${state.isNetworkLocationPresent} \n" +
-                                                " Network Location usable: " +
-                                                "${state.isNetworkLocationUsable} \n"
-                                    )
-                                } catch (e: RuntimeExecutionException) {
-                                    Log.e(TAG, "stat gps")
-                                    if (e.cause is ResolvableApiException) {
-                                        (e.cause as ResolvableApiException).startResolutionForResult(
-                                            requireActivity(),
-                                            GPS_AUTO_START_REQUEST_CODE
-                                        )
-                                    }
-
-                                }
-                            }
-
-                        val locationUpdates = object : LocationCallback() {
-                            override fun onLocationResult(lr: LocationResult) {
-                                Log.e(TAG, lr.toString())
-                                Log.e(TAG, "Newest Location: " + lr.locations.last())
-                                // do something with the new location...
-                                animateZoomInCamera(
-                                    LatLng(
-                                        lr.locations.last().latitude,
-                                        lr.locations.last().longitude
-                                    )
-                                )
-                            }
-                        }
-                        fusedLocationProviderClient.requestLocationUpdates(
-                            reqSetting,
-                            locationUpdates,
-                            null /* Looper */
-                        )
-
-                        fusedLocationProviderClient.removeLocationUpdates(locationUpdates)
-
-                    }
-                }
-        }
-    }
-
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        Log.d(TAG, "onActivityResult: is called")
-        if (resultCode == Activity.RESULT_OK) {
-            Log.d(TAG, "onActivityResult: first 1")
-            if (resultCode == GPS_AUTO_START_REQUEST_CODE) {
-                Log.d(TAG, "onActivityResult: in 2")
-                getCurrentLocation()
-            } else {
-                Log.d(TAG, "onActivityResult: has pressed cancel")
-                getCurrentLocation()
+                addAllPolylines()
             }
-        } else {
-            Log.d(TAG, "onActivityResult: no code")
         }
+
+
+
+
+        subscribeToObservers()
+
+
     }
 
-    private val reqSetting = LocationRequest.create().apply {
-        fastestInterval = 10000
-        interval = 10000
-        priority = LocationRequest.PRIORITY_HIGH_ACCURACY
-        smallestDisplacement = 1.0f
-    }
-
-    fun animateZoomInCamera(latLng: LatLng) {
-        mGoogleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15f))
-    }
-
-
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == REQUEST_PERMISSION) {
-            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                Log.d(TAG, "onRequestPermissionsResult: is success")
-                getCurrentLocation()
-            } else {
-                Toast.makeText(requireContext(), "need to access map", Toast.LENGTH_SHORT).show()
-                // getCurrentLocation()
-
+    var locationCallback: LocationCallback = object : LocationCallback() {
+        override fun onLocationResult(locationResult: LocationResult) {
+            super.onLocationResult(locationResult)
+           // Log.d(TAG, "onLocationResult: location -> $locationResult")
+           // Log.d(TAG, "onLocationResult: " + locationResult.lastLocation)
+            if (map != null) {
+                setUserLocationMarker(locationResult.lastLocation)
             }
         }
     }
+    private fun setUserLocationMarker(location: Location) {
+        val latLng = LatLng(location.getLatitude(), location.getLongitude())
+        if (userLocationMarker == null) {
 
-
-    override fun onDetach() {
-        Log.d(TAG, "Fragment : Deactach is called")
-        super.onDetach()
+            //Create a new marker
+            val markerOptions = MarkerOptions()
+            markerOptions.position(latLng)
+            markerOptions.icon( bitmapDescriptorFromVector(requireContext(),R.drawable.ic_baseline_directions_bike_245))
+            markerOptions.rotation(location.getBearing())
+            markerOptions.anchor(0.5.toFloat(), 0.5.toFloat())
+            userLocationMarker = map?.addMarker(markerOptions)
+            map?.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 17f))
+        } else {
+            //use the previously created marker
+            userLocationMarker!!.position = latLng
+            userLocationMarker!!.rotation = location.bearing
+            map?.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 17f))
+        }
+        if (userLocationAccuracyCircle == null) {
+            val circleOptions = CircleOptions()
+            circleOptions.center(latLng)
+            circleOptions.strokeWidth(4f)
+            circleOptions.strokeColor(Color.argb(255, 255, 0, 0))
+            circleOptions.fillColor(Color.argb(32, 255, 0, 0))
+            circleOptions.radius(location.accuracy.toDouble())
+            userLocationAccuracyCircle = map?.addCircle(circleOptions)
+        } else {
+            userLocationAccuracyCircle!!.center = latLng
+            userLocationAccuracyCircle!!.radius = location.accuracy.toDouble()
+        }
     }
 
-    override fun onStart() {
-        Log.d(TAG, "Fragment : on start: is called")
-        super.onStart()
-    }
-
-    override fun onDestroyView() {
-        Log.d(TAG, "Fragment : onDestroyView is called")
-        super.onDestroyView()
-    }
-
-    override fun onPause() {
-        Log.d(TAG, "Fragment : on pause is called")
-        super.onPause()
-    }
-
-    override fun onResume() {
-
-        Log.d(TAG, "Fragment : onResume is called")
-        getCurrentLocation()
-
-        super.onResume()
-    }
-
-
-    override fun onMapReady(googleMap: GoogleMap?) {
-        Log.e(TAG, "Fragment :onMapReady is called")
-
-        // mGoogleMap.uiSettings.isZoomControlsEnabled = true
-
-        mGoogleMap = googleMap!!
-        mGoogleMap.moveCamera(CameraUpdateFactory.newLatLng(malaysiaCoordinate))
-        animateZoomInCamera(malaysiaCoordinate)
-        // mGoogleMap.mapType = GoogleMap.MAP_TYPE_HYBRID
+    private fun startLocationUpdates() {
         if (ActivityCompat.checkSelfPermission(
                 requireContext(),
                 Manifest.permission.ACCESS_FINE_LOCATION
@@ -273,22 +131,109 @@ class MapsFragment : Fragment(R.layout.fragment_maps), OnMapReadyCallback {
             // for ActivityCompat#requestPermissions for more details.
             return
         }
-        mGoogleMap.isMyLocationEnabled = true
-//        mGoogleMap.addMarker(MarkerOptions().position(malaysiaCoordinate).icon(
-//            bitmapDescriptorFromVector(requireContext(),R.drawable.ic_baseline_directions_bike_24)))
-
-//        if(mLocationManager?.isProviderEnabled(LocationManager.GPS_PROVIDER) == true){
-//
-//        }
+        map?.isMyLocationEnabled = true
+        fusedLocationProviderClient!!.requestLocationUpdates(
+            locationRequest,
+            locationCallback,
+            Looper.getMainLooper()
+        )
     }
+
+    private fun stopLocationUpdates() {
+        fusedLocationProviderClient?.removeLocationUpdates(locationCallback)
+    }
+
+    private fun subscribeToObservers() {
+
+
+        MotionDetectService.pathPoints.observe(viewLifecycleOwner, {
+            pathPoints = it
+            addLatestPolyline()
+            moveCameraToUser()
+        })
+    }
+
+    private fun moveCameraToUser() {
+        if (pathPoints.isNotEmpty() && pathPoints.last().isNotEmpty()) {
+            map?.animateCamera(
+                CameraUpdateFactory.newLatLngZoom(
+                    pathPoints.last().last(),
+                    Constant.MAP_ZOOM
+                )
+            )
+        }
+    }
+
+    private fun addAllPolylines() {
+        for (polyline in pathPoints) {
+            val polylineOptions = PolylineOptions()
+                .color(Constant.POLYLINE_COLOR)
+                .width(Constant.POLYLINE_WIDTH)
+                .addAll(polyline)
+            map?.addPolyline(polylineOptions)
+
+
+        }
+    }
+
+
+    private fun addLatestPolyline() {
+        if (pathPoints.isNotEmpty() && pathPoints.last().size > 1) {
+            val preLastLatLng = pathPoints.last()[pathPoints.last().size - 2]
+            val lastLatLng = pathPoints.last().last()
+            val polylineOptions = PolylineOptions()
+                .color(Constant.POLYLINE_COLOR)
+                .width(Constant.POLYLINE_WIDTH)
+                .add(preLastLatLng)
+                .add(lastLatLng)
+            map?.addPolyline(polylineOptions)
+
+
+        }
+    }
+
 
     private fun bitmapDescriptorFromVector(context: Context, vectorResId: Int): BitmapDescriptor? {
         return ContextCompat.getDrawable(context, vectorResId)?.run {
             setBounds(0, 0, intrinsicWidth, intrinsicHeight)
-            val bitmap = Bitmap.createBitmap(intrinsicWidth, intrinsicHeight, Bitmap.Config.ARGB_8888)
+            val bitmap =
+                Bitmap.createBitmap(intrinsicWidth, intrinsicHeight, Bitmap.Config.ARGB_8888)
             draw(Canvas(bitmap))
             BitmapDescriptorFactory.fromBitmap(bitmap)
         }
+    }
+
+
+    override fun onResume() {
+        super.onResume()
+        binding.mapView?.onResume()
+    }
+
+    override fun onStart() {
+        super.onStart()
+        startLocationUpdates()
+        binding.mapView?.onStart()
+    }
+
+    override fun onStop() {
+        super.onStop()
+        binding.mapView?.onStop()
+        stopLocationUpdates()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        binding.mapView?.onPause()
+    }
+
+    override fun onLowMemory() {
+        super.onLowMemory()
+        binding.mapView?.onLowMemory()
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        binding.mapView?.onSaveInstanceState(outState)
     }
 
 }

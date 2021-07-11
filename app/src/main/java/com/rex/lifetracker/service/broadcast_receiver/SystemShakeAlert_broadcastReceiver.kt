@@ -9,7 +9,6 @@ import android.widget.Toast
 import com.rex.lifetracker.service.MotionDetectService
 import com.rex.lifetracker.utils.Constant
 import com.rex.lifetracker.utils.Constant.CANCEL_ACTION
-import com.rex.lifetracker.utils.Constant.CANCEL_ACTION2
 import com.rex.lifetracker.utils.Constant.MOTION_ALERT_SYSTEM_NOTIFICATION_ID
 import com.rex.lifetracker.utils.Constant.MOTION_ALERT_SYSTEM_NOTIFICATION_ID2
 import com.rex.lifetracker.utils.Constant.STOP_SERVICE_ACTION
@@ -27,7 +26,7 @@ class SystemShakeAlert_broadcastReceiver : BroadcastReceiver() {
                 notificationManager.cancel(MOTION_ALERT_SYSTEM_NOTIFICATION_ID)
                 notificationManager.cancel(MOTION_ALERT_SYSTEM_NOTIFICATION_ID2)
                 context.startService(Intent(context, MotionDetectService::class.java).apply {
-                    this.action = Constant.ACTION_START_SERVICE_FROM_NOTIFICATION
+                    this.action = Constant.ACTION_START_SERVICE
                 })
 
             }

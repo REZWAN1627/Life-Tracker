@@ -2,11 +2,15 @@ package com.rex.lifetracker.view
 
 import android.Manifest
 import android.animation.ObjectAnimator
+import android.app.Activity
 import android.app.Dialog
 import android.app.NotificationManager
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.graphics.drawable.ColorDrawable
+import android.location.LocationManager
 import android.net.Uri
 import android.os.*
 import android.provider.Settings
@@ -24,6 +28,7 @@ import androidx.core.view.GravityCompat
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
+import androidx.navigation.fragment.findNavController
 import androidx.navigation.ui.NavigationUI
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.bumptech.glide.Glide
@@ -31,6 +36,9 @@ import com.github.pwittchen.reactivenetwork.library.rx2.ReactiveNetwork
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.android.gms.common.api.ApiException
+import com.google.android.gms.common.api.ResolvableApiException
+import com.google.android.gms.location.*
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
@@ -40,13 +48,15 @@ import com.rex.lifetracker.adapter.Contacts_RecyclerView
 import com.rex.lifetracker.databinding.ActivityMainBinding
 import com.rex.lifetracker.service.MotionDetectService
 import com.rex.lifetracker.service.UIChange
-import com.rex.lifetracker.utils.Constant
+import com.rex.lifetracker.service.broadcast_receiver.GpsLocationReceiver
 import com.rex.lifetracker.utils.Constant.ACTION_START_SERVICE
 import com.rex.lifetracker.utils.Constant.ACTION_STOP_SERVICE
+import com.rex.lifetracker.utils.Constant.GPS_PERMISSION_CODE
 import com.rex.lifetracker.utils.Constant.MOTION_ALERT_SYSTEM_NOTIFICATION_ID
 import com.rex.lifetracker.utils.Constant.MOTION_ALERT_SYSTEM_NOTIFICATION_ID2
 import com.rex.lifetracker.utils.Constant.REQUESTED_PERMISSION_CODE
 import com.rex.lifetracker.utils.Constant.TAG
+import com.rex.lifetracker.utils.Permission
 import com.rex.lifetracker.viewModel.LocalDataBaseVM.LocalDataBaseViewModel
 import com.vmadalin.easypermissions.EasyPermissions
 import com.vmadalin.easypermissions.dialogs.SettingsDialog
@@ -77,6 +87,11 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
     private var internetDisposable: Disposable? = null
     private var timeCountInMilliSeconds = (30 * 1000).toLong()
     private var countDownTimer: CountDownTimer? = null
+    private var mSettingClient: SettingsClient? = null
+    private var mLocationSettingRequest: LocationSettingsRequest? = null
+    private var mLocationManager: LocationManager? = null
+    private var mLocationRequest: LocationRequest? = null
+    private var callFlag = false
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -86,15 +101,31 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
         setContentView(binding.root)
 
 
+
         requestPermission()
         initViewModel()
         initValue()
         setViewValue()
         setObservers()
-
+        registerGPS()
 
 //------------------------------------binding----------------------------------------//
         binding.apply {
+
+            //GPS Broad Cast Receiver
+            GpsLocationReceiver.GPSEnable.observe(this@MainActivity, {
+                if (it == true) {
+                    callFlag = false
+                    Log.d(TAG, "onCreate: enable")
+                } else {
+
+                    if (!callFlag) {
+                        checkGPS()
+                    }
+
+                    Log.d(TAG, "onCreate: disable")
+                }
+            })
 
             //controlling bottom nav
             bottomNavigationView.setOnItemSelectedListener { menu ->
@@ -129,18 +160,14 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
             //warning bottom sheet
             stopServicesBeforeCall.setOnClickListener {
 
-//                bottomSheet.visibility = View.VISIBLE
                 BottomSheetBehavior.from(bottomSheet2).state = BottomSheetBehavior.STATE_COLLAPSED
                 bottomSheet2.visibility = View.GONE
                 BottomSheetBehavior.from(bottomSheet).state = BottomSheetBehavior.STATE_EXPANDED
-//                bottomSheet2.visibility = View.GONE
                 val notificationManager =
                     getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
                 notificationManager.cancel(MOTION_ALERT_SYSTEM_NOTIFICATION_ID)
                 notificationManager.cancel(MOTION_ALERT_SYSTEM_NOTIFICATION_ID2)
                 serviceStart()
-
-                // stopService(Intent(this@MainActivity2, MotionDetectService::class.java))
             }
 
             //controlling nav drawer
@@ -176,7 +203,7 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
                 )
                     .show()
 
-                stopService(
+                startService(
                     Intent(
                         this@MainActivity,
                         MotionDetectService::class.java
@@ -189,12 +216,13 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
 
             //adding more trusted contacts
             addMoreContacts.setOnClickListener {
-                stopService(
+                startService(
                     Intent(
                         this@MainActivity,
                         MotionDetectService::class.java
-                    )
-                )
+                    ).apply {
+                        this.action = ACTION_STOP_SERVICE
+                    })
                 finish()
                 startActivity(
                     Intent(
@@ -210,12 +238,13 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
 
                 Firebase.auth.signOut()
                 googleSignInClient.signOut()
-                stopService(
+                startService(
                     Intent(
                         this@MainActivity,
                         MotionDetectService::class.java
-                    )
-                )
+                    ).apply {
+                        this.action = ACTION_STOP_SERVICE
+                    })
                 finish()
                 startActivity(Intent(this@MainActivity, SignIn::class.java).putExtra("Nuke", "YES"))
                 finish()
@@ -224,12 +253,13 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
             }
             navAddContacts.setOnClickListener {
 
-                stopService(
+                startService(
                     Intent(
                         this@MainActivity,
                         MotionDetectService::class.java
-                    )
-                )
+                    ).apply {
+                        this.action = ACTION_STOP_SERVICE
+                    })
                 finish()
                 startActivity(
                     Intent(
@@ -245,6 +275,22 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
 
     }
 
+    //navigate to fragment if needed
+    private fun navigateToFramentIfNeeded(action:String?){
+
+        navHostFragment.findNavController().navigate(R.id.action_global_fragment)
+
+
+    }
+
+
+    private fun registerGPS() {
+        Log.d(TAG, "registerGPS: is called")
+        val br: BroadcastReceiver = GpsLocationReceiver()
+        val filter = IntentFilter(LocationManager.PROVIDERS_CHANGED_ACTION)
+        registerReceiver(br, filter)
+    }
+
 
     private fun initValue() {
         mAdapter = Contacts_RecyclerView(this)
@@ -258,6 +304,7 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
                 supportFragmentManager.findFragmentById(fragmentContainerView.id) as NavHostFragment
             navController = navHostFragment.navController
             NavigationUI.setupWithNavController(bottomNavigationView, navController)
+            navHostFragment.findNavController().navigate(R.id.action_global_fragment)
 
             //recycler setup
             recyclerViewSheet.apply {
@@ -305,6 +352,20 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
 
 
     private fun initViewModel() {
+
+        //location init//
+
+
+        mLocationManager = getSystemService(LOCATION_SERVICE) as LocationManager
+        mSettingClient = LocationServices.getSettingsClient(this)
+        mLocationRequest = LocationRequest.create().setInterval(500).setFastestInterval(500)
+            .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
+
+        if (mLocationManager != null) {
+            mLocationSettingRequest =
+                LocationSettingsRequest.Builder().addLocationRequest(mLocationRequest).build()
+        }
+
         //local database
         localDataBaseViewModel = ViewModelProvider(this).get(LocalDataBaseViewModel::class.java)
         val dialogue =
@@ -313,8 +374,11 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
         dialogue?.show()
         localDataBaseViewModel.realAllUserInfo.observe(this, {
             if (it.isNotEmpty()) {
-                dialogue.dismiss()
+                dialogue?.dismiss()
                 trailCalculation(userActiveTime, it[0].Deactivate_Time)
+            } else {
+                dialogue?.dismiss()
+                Toast.makeText(this, "reload the apps again", Toast.LENGTH_SHORT).show()
             }
 
 
@@ -330,8 +394,6 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
 
 
     }
-
-
 
 
     private fun setViewValue() {
@@ -531,9 +593,11 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
 
             override fun onFinish() {
                 binding.apply {
-                    BottomSheetBehavior.from(bottomSheet2).state = BottomSheetBehavior.STATE_COLLAPSED
+                    BottomSheetBehavior.from(bottomSheet2).state =
+                        BottomSheetBehavior.STATE_COLLAPSED
                     bottomSheet2.visibility = View.GONE
-                    BottomSheetBehavior.from(bottomSheet2).state = BottomSheetBehavior.STATE_COLLAPSED
+                    BottomSheetBehavior.from(bottomSheet2).state =
+                        BottomSheetBehavior.STATE_COLLAPSED
                     bottomSheet.visibility = View.VISIBLE
                 }
                 setProgressBarValues() // call to initialize the progress bar values
@@ -549,32 +613,115 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
 
     //
 //------------------------------------------------------------------------permission sector ------------------------------------------------------------
-    private fun requestPermission() {
-        EasyPermissions.requestPermissions(
-            this,
-            "This application cannot work without  Permission.",
-            REQUESTED_PERMISSION_CODE,
-            Manifest.permission.CALL_PHONE,
-            Manifest.permission.READ_PHONE_STATE,
-            Manifest.permission.READ_CALL_LOG,
-            Manifest.permission.SEND_SMS,
-            Manifest.permission.ACCESS_COARSE_LOCATION,
-            Manifest.permission.ACCESS_FINE_LOCATION
-        )
+    private fun checkGPS() {
+        callFlag = true
+        Log.d(TAG, "requestPermission: First Permission wall")
+        mSettingClient?.checkLocationSettings(mLocationSettingRequest)?.addOnSuccessListener {
+        }?.addOnFailureListener { ex ->
+            if ((ex as ApiException).statusCode == LocationSettingsStatusCodes.RESOLUTION_REQUIRED) {
+
+                try {
+                    val resolvableApiException = ex as ResolvableApiException
+                    resolvableApiException.startResolutionForResult(this, GPS_PERMISSION_CODE)
+                } catch (e: Exception) {
+                    Log.d(TAG, "requestPermission: exception $e")
+                }
+            } else {
+                if ((ex as ApiException).statusCode == LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE) {
+                    Toast.makeText(
+                        this,
+                        "GPS Enable Cannot be fixed here\nFix in Settings",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+        }
+
 
     }
 
-    private fun hasPermission() =
-        EasyPermissions.hasPermissions(
-            this,
-            Manifest.permission.CALL_PHONE,
-            Manifest.permission.READ_PHONE_STATE,
-            Manifest.permission.READ_CALL_LOG,
-            Manifest.permission.SEND_SMS,
-            Manifest.permission.ACCESS_COARSE_LOCATION,
-            Manifest.permission.ACCESS_FINE_LOCATION,
-            Manifest.permission.FOREGROUND_SERVICE
-        )
+    private fun requestPermission() {
+        if (Permission.hasLocationPermissions(this)) {
+
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
+                !Settings.canDrawOverlays(this)
+            ) {
+                userDialog()
+                Log.d(TAG, "onPermissionsGranted: dialog")
+
+            } else {
+                if (mLocationManager?.isProviderEnabled(LocationManager.GPS_PROVIDER) == true) {
+                    if (!sosActivityState) {
+                        serviceStart()
+                        appsState = true
+                    }
+                } else {
+                    Log.d(TAG, "requestPermission: First Permission wall")
+                    mSettingClient?.checkLocationSettings(mLocationSettingRequest)
+                        ?.addOnSuccessListener {
+                            Log.d(TAG, "requestPermission: GPS already Enable")
+                            if (!sosActivityState) {
+                                serviceStart()
+                                appsState = true
+                            }
+                        }?.addOnFailureListener { ex ->
+                            if ((ex as ApiException).statusCode == LocationSettingsStatusCodes.RESOLUTION_REQUIRED) {
+
+                                try {
+                                    val resolvableApiException = ex as ResolvableApiException
+                                    resolvableApiException.startResolutionForResult(
+                                        this,
+                                        GPS_PERMISSION_CODE
+                                    )
+                                } catch (e: Exception) {
+                                    Log.d(TAG, "requestPermission: exception $e")
+                                }
+                            } else {
+                                if ((ex as ApiException).statusCode == LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE) {
+                                    Toast.makeText(
+                                        this,
+                                        "GPS Enable Cannot be fixed here\nFix in Settings",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
+                            }
+                        }
+                }
+
+            }
+            return
+        }
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+            EasyPermissions.requestPermissions(
+                this,
+                "You need to accept permissions to use this app.",
+                REQUESTED_PERMISSION_CODE,
+                Manifest.permission.CALL_PHONE,
+                Manifest.permission.READ_PHONE_STATE,
+                Manifest.permission.READ_CALL_LOG,
+                Manifest.permission.SEND_SMS,
+                Manifest.permission.ACCESS_COARSE_LOCATION,
+                Manifest.permission.ACCESS_FINE_LOCATION,
+            )
+        } else {
+            EasyPermissions.requestPermissions(
+                this,
+                "You need to accept permissions to use this app.",
+                REQUESTED_PERMISSION_CODE,
+                Manifest.permission.CALL_PHONE,
+                Manifest.permission.READ_PHONE_STATE,
+                Manifest.permission.READ_CALL_LOG,
+                Manifest.permission.SEND_SMS,
+                Manifest.permission.ACCESS_COARSE_LOCATION,
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.FOREGROUND_SERVICE,
+                Manifest.permission.ACCESS_BACKGROUND_LOCATION
+            )
+        }
+
+
+    }
 
 
     private fun userDialog() {
@@ -593,7 +740,13 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
                     Toast.LENGTH_SHORT
                 ).show()
                 Handler(Looper.getMainLooper()).postDelayed({
-                    stopService(Intent(this@MainActivity, MotionDetectService::class.java))
+                    startService(
+                        Intent(
+                            this@MainActivity,
+                            MotionDetectService::class.java
+                        ).apply {
+                            this.action = ACTION_STOP_SERVICE
+                        })
                     finishAndRemoveTask()
 
                 }, 2000)
@@ -622,24 +775,52 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
     }
 
     override fun onPermissionsGranted(requestCode: Int, perms: List<String>) {
-        if (!hasPermission()) {
-            // requestLocationPermission()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
+            !Settings.canDrawOverlays(this)
+        ) {
+            userDialog()
+            Log.d(TAG, "onPermissionsGranted: dialog")
+
         } else {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
-                !Settings.canDrawOverlays(this)
-            ) {
-                userDialog()
-                Log.d(TAG, "onPermissionsGranted: dialog")
-
-            } else {
-
+            if (mLocationManager?.isProviderEnabled(LocationManager.GPS_PROVIDER) == true) {
                 if (!sosActivityState) {
                     serviceStart()
                     appsState = true
                 }
+            } else {
+                Log.d(TAG, "onPermissionsGranted: second wall")
+                mSettingClient?.checkLocationSettings(mLocationSettingRequest)
+                    ?.addOnSuccessListener {
+                        Log.d(TAG, "requestPermission: GPS already Enable")
+                        if (!sosActivityState) {
+                            serviceStart()
+                            appsState = true
+                        }
+                    }?.addOnFailureListener { ex ->
+                        if ((ex as ApiException).statusCode == LocationSettingsStatusCodes.RESOLUTION_REQUIRED) {
 
+                            try {
+                                val resolvableApiException = ex as ResolvableApiException
+                                resolvableApiException.startResolutionForResult(
+                                    this,
+                                    GPS_PERMISSION_CODE
+                                )
+                            } catch (e: Exception) {
+                                Log.d(TAG, "requestPermission: exception $e")
+                            }
+                        } else {
+                            if ((ex as ApiException).statusCode == LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE) {
+                                Toast.makeText(
+                                    this,
+                                    "GPS Enable Cannot be fixed here\nFix in Settings",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        }
+                    }
             }
         }
+
 
     }
 
@@ -652,6 +833,23 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
         EasyPermissions.onRequestPermissionsResult(requestCode, permissions, grantResults, this)
     }
 
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (resultCode == Activity.RESULT_OK) {
+            if (resultCode == GPS_PERMISSION_CODE) {
+                Log.d(TAG, "onActivityResult: is success")
+
+            } else {
+                Log.e(TAG, "onActivityResult: somethig is wrong1")
+            }
+        } else {
+            callFlag = false
+            checkGPS()
+            Log.e(TAG, "onActivityResult: somethig is wrong2")
+        }
+    }
+
+    ///////////////////////////////////end of permission/////////////////////////////
 
     override fun onResume() {
         super.onResume()
@@ -679,6 +877,7 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
     override fun onPause() {
         super.onPause()
         safelyDispose(internetDisposable)
+
     }
 
     private fun safelyDispose(disposable: Disposable?) {

@@ -1,5 +1,6 @@
 package com.rex.lifetracker.service
 
+import android.annotation.SuppressLint
 import android.app.Notification
 import android.app.PendingIntent
 import android.content.Intent
@@ -7,16 +8,23 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
+import android.location.Location
 import android.media.RingtoneManager
 import android.net.Uri
+import android.os.Looper
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.*
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationRequest
+import com.google.android.gms.location.LocationRequest.PRIORITY_HIGH_ACCURACY
+import com.google.android.gms.location.LocationResult
+import com.google.android.gms.maps.model.LatLng
 import com.rex.lifetracker.R
 import com.rex.lifetracker.service.broadcast_receiver.SystemShakeAlert_broadcastReceiver
 import com.rex.lifetracker.utils.Constant.ACTION_START_SERVICE
-import com.rex.lifetracker.utils.Constant.ACTION_START_SERVICE_FROM_NOTIFICATION
 import com.rex.lifetracker.utils.Constant.ACTION_STOP_SERVICE
 import com.rex.lifetracker.utils.Constant.ACTIVITY_REQUEST_CODE
 import com.rex.lifetracker.utils.Constant.BROADCAST_REQUEST_CODE
@@ -24,19 +32,26 @@ import com.rex.lifetracker.utils.Constant.CANCEL_ACTION
 import com.rex.lifetracker.utils.Constant.CHANNEL_ALERT2_SYSTEM_ID
 import com.rex.lifetracker.utils.Constant.CHANNEL_ALERT_SYSTEM_ID
 import com.rex.lifetracker.utils.Constant.CHANNEL_ID
+import com.rex.lifetracker.utils.Constant.FASTEST_LOCATION_INTERVAL
 import com.rex.lifetracker.utils.Constant.FOREGROUND_NOTIFICATION_ID
+import com.rex.lifetracker.utils.Constant.LOCATION_UPDATE_INTERVAL
 import com.rex.lifetracker.utils.Constant.MOTION_ALERT_SYSTEM_NOTIFICATION_ID
 import com.rex.lifetracker.utils.Constant.MOTION_ALERT_SYSTEM_NOTIFICATION_ID2
 import com.rex.lifetracker.utils.Constant.STOP_SERVICE_ACTION
 import com.rex.lifetracker.utils.Constant.TAG
+import com.rex.lifetracker.utils.Permission
 import com.rex.lifetracker.view.SOS
 import kotlin.math.roundToInt
 import kotlin.math.sqrt
 
+typealias Polyline = MutableList<LatLng>
+typealias Polylines = MutableList<Polyline>
 
 class MotionDetectService : LifecycleService(), SensorEventListener, LifecycleObserver {
+    //detect apps forground and background state
     var wasInBackground = false
 
+    //sensor ans notification
     private var sensorManager: SensorManager? = null
     private var sensor: Sensor? = null
     private lateinit var notificationManager: NotificationManagerCompat
@@ -47,7 +62,7 @@ class MotionDetectService : LifecycleService(), SensorEventListener, LifecycleOb
     private var accelerationZ: Double = 0.0
 
     //accident threashold
-    private val threshold = 50
+    private val threshold = 40
 
     // Minimum acceleration needed to count as a shake movement
     private val MIN_SHAKE_ACCELERATION = 12
@@ -68,13 +83,33 @@ class MotionDetectService : LifecycleService(), SensorEventListener, LifecycleOb
     private val Y = 1
     private val Z = 2
 
-
     // Start time for the shake detection
     var startTime: Long = 0
 
     // Counter for shake movements
     var moveCount = 0
+    //------------------sensor declatarion-----------///
 
+
+    //----------------------googleMap------------------------//
+
+    var isFirstRun = true
+
+    lateinit var fusedLocationProviderClient: FusedLocationProviderClient
+
+
+    companion object {
+        val isTracking = MutableLiveData<Boolean>()
+        val pathPoints = MutableLiveData<Polylines>()
+        val uiChange = MutableLiveData<UIChange>()
+
+    }
+
+    private fun postInitialValues() {
+        isTracking.postValue(false)
+        pathPoints.postValue(mutableListOf())
+
+    }
 
     override fun onCreate() {
         super.onCreate()
@@ -83,21 +118,74 @@ class MotionDetectService : LifecycleService(), SensorEventListener, LifecycleOb
         sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
         sensor = sensorManager?.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
         notificationManager = NotificationManagerCompat.from(this)
+        postInitialValues()
+        fusedLocationProviderClient = FusedLocationProviderClient(this)
+        isTracking.observe(this, Observer {
+          //  Log.d(TAG, "onCreate: value of tracking: $it")
+            updateLocationTracking(it)
+        })
 
     }
 
-    override fun onDestroy() {
-
-        sensorManager?.unregisterListener(this)
-        stopSelf()
-        super.onDestroy()
-
+    @SuppressLint("MissingPermission")
+    private fun updateLocationTracking(isTracking: Boolean) {
+     //   Log.d(TAG, "updateLocationTracking: is called")
+        if (isTracking) {
+         //   Log.d(TAG, "updateLocationTracking: is in")
+            if (Permission.hasLocationPermissions(this)) {
+         //       Log.d(TAG, "updateLocationTracking: in 2")
+                val request = LocationRequest.create().apply {
+                    interval = LOCATION_UPDATE_INTERVAL
+                    fastestInterval = FASTEST_LOCATION_INTERVAL
+                    priority = PRIORITY_HIGH_ACCURACY
+                }
+                fusedLocationProviderClient.requestLocationUpdates(
+                    request,
+                    locationCallback,
+                    Looper.getMainLooper()
+                )
+            }
+        } else {
+            fusedLocationProviderClient.removeLocationUpdates(locationCallback)
+        }
     }
 
-    companion object {
-        val uiChange = MutableLiveData<UIChange>()
+    val locationCallback = object : LocationCallback() {
+        override fun onLocationResult(result: LocationResult?) {
+            super.onLocationResult(result)
+            if (isTracking.value!!) {
+           //     Log.d(TAG, "onLocationResult: is called")
 
+                result?.locations?.let { locations ->
+                    for (location in locations) {
+                        addPathPoint(location)
+//                        Log.d(
+//                            TAG,
+//                            "onLocationResult: NEW LOCATION: ${location.latitude}, ${location.longitude}"
+//                        )
+                    }
+                }
+
+            }
+        }
     }
+
+    private fun addPathPoint(location: Location?) {
+        location?.let {
+            val pos = LatLng(location.latitude, location.longitude)
+            pathPoints.value?.apply {
+                last().add(pos)
+                pathPoints.postValue(this)
+            }
+        }
+    }
+
+    private fun addEmptyPolyline() = pathPoints.value?.apply {
+        add(mutableListOf())
+        pathPoints.postValue(this)
+    } ?: pathPoints.postValue(mutableListOf(mutableListOf()))
+
+    //---------------------------------Google Map ------------------------//
 
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -115,18 +203,14 @@ class MotionDetectService : LifecycleService(), SensorEventListener, LifecycleOb
                 ACTION_STOP_SERVICE -> {
                     uiChange.postValue(UIChange.END)
                     sensorManager?.unregisterListener(this)
-
-
+                    isTracking.postValue(false)
+                    fusedLocationProviderClient.removeLocationUpdates(locationCallback)
                     stopForeground(true)
+                    postInitialValues()
                     stopSelf()
                     Log.d(TAG, "onStartCommand: services is sttoped")
                 }
-                ACTION_START_SERVICE_FROM_NOTIFICATION -> {
-                    ForegroundStart()
-                    uiChange.postValue(UIChange.END)
 
-
-                }
                 else -> {
                     //do nothing
                     Log.d(TAG, "onStartCommand: services is sttoped")
@@ -141,6 +225,8 @@ class MotionDetectService : LifecycleService(), SensorEventListener, LifecycleOb
 
     private fun ForegroundStart() {
         sensorManager?.registerListener(this, sensor, SensorManager.SENSOR_DELAY_NORMAL)
+        addEmptyPolyline()
+        isTracking.postValue(true)
 
 
         val stopService = PendingIntent.getBroadcast(
@@ -289,13 +375,14 @@ class MotionDetectService : LifecycleService(), SensorEventListener, LifecycleOb
         Log.d(TAG, "executeShakeAction: working")
 
         createAlertNotification()
+        fusedLocationProviderClient.removeLocationUpdates(locationCallback)
         stopSelf()
     }
 
 
     private fun createAlertNotification() {
         uiChange.postValue(UIChange.START)
-
+     //   postInitialValues()
         sensorManager?.unregisterListener(this)
         Log.d(TAG, "createAlertNotification: is called")
         val pendingIntentCancel = PendingIntent.getBroadcast(
@@ -317,7 +404,7 @@ class MotionDetectService : LifecycleService(), SensorEventListener, LifecycleOb
         )
 
         if (!wasInBackground) {
-            Log.d(TAG, "createAlertNotification: background not")
+            Log.d(TAG, "createAlertNotification: background Yes")
             val notification = NotificationCompat.Builder(this, CHANNEL_ALERT_SYSTEM_ID)
                 .setSmallIcon(R.drawable.ic_baseline_add_alert_24)
                 .setContentTitle("Motion Detected")
@@ -354,7 +441,7 @@ class MotionDetectService : LifecycleService(), SensorEventListener, LifecycleOb
             notification.flags = notification.flags or Notification.FLAG_NO_CLEAR
             notificationManager.notify(MOTION_ALERT_SYSTEM_NOTIFICATION_ID, notification)
         } else {
-            Log.d(TAG, "createAlertNotification: background yes")
+            Log.d(TAG, "createAlertNotification: background No")
             val notification = NotificationCompat.Builder(this, CHANNEL_ALERT2_SYSTEM_ID)
                 .setSmallIcon(R.drawable.ic_baseline_add_alert_24)
                 .setContentTitle("Motion Detected")
@@ -411,6 +498,14 @@ class MotionDetectService : LifecycleService(), SensorEventListener, LifecycleOb
         // app moved to background
         Log.d(TAG, "onMoveToBackground: in background")
         wasInBackground = false
+    }
+
+    override fun onDestroy() {
+
+        sensorManager?.unregisterListener(this)
+        stopSelf()
+        super.onDestroy()
+
     }
 
 

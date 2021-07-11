@@ -4,6 +4,10 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/userinfo_navigationgraph"
     app:startDestination="@id/mapsFragment">
+
+    <action android:id="@+id/action_global_fragment"
+        app:destination="@+id/mapsFragment"
+        app:launchSingleTop="true"/>
     <fragment
         android:id="@+id/profile"
         android:name="com.rex.lifetracker.view.fragment.Profile"
