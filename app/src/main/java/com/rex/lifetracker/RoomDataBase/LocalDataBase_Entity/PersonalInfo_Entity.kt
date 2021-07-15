@@ -13,6 +13,9 @@ import androidx.room.PrimaryKey
         value = ["First_Name", "Last_Name",
             "Deactivate_Time",
             "Active_Time",
+            "Subscription_Pack",
+            "brought_pack_time",
+            "status",
             "User_Email", ], unique = true
     )]
 )
@@ -28,6 +31,12 @@ data class PersonalInfo_Entity(
     val Deactivate_Time: String,
     @ColumnInfo(name = "Active_Time")
     val Active_Time: String,
+    @ColumnInfo(name = "Subscription_Pack")
+    val Subscription_Pack: String,
+    @ColumnInfo(name = "brought_pack_time")
+    val brought_pack_time:String,
+    @ColumnInfo(name = "status")
+    val status:String,
     @ColumnInfo(name = "User_Email")
     val User_Email: String,
     @ColumnInfo(name = "Image")

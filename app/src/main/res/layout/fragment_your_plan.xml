@@ -42,10 +42,11 @@
                     android:layout_height="0dp" />
 
                 <TextView
+                    android:id="@+id/subscriptionPack"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
-                    android:text="Monthly Subscription Pack"
+                    android:text="Trail Version"
                     android:textColor="@color/TextInformation"
                     android:textSize="@dimen/_10ssp"
                     android:textStyle="bold" />
@@ -53,14 +54,15 @@
             </LinearLayout>
 
             <TextView
-                android:id="@+id/month_sub_pack"
+                android:layout_gravity="center"
+                android:id="@+id/packageDes"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:padding="@dimen/_10sdp"
-                android:text="@string/example2" />
+                android:text="You are using trial pack" />
 
             <TextView
-                android:id="@+id/yourPlane_Date"
+                android:id="@+id/CurrentDate"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="@dimen/_10sdp"
@@ -99,10 +101,11 @@
                         android:layout_height="0dp" />
 
                     <TextView
+                        android:id="@+id/packageName"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_gravity="center"
-                        android:text="Month Pack"
+                        android:text="Trail Pack"
                         android:textColor="@color/black" />
 
                 </LinearLayout>
@@ -116,7 +119,7 @@
 
                     <TextView
                         android:layout_gravity="center"
-                        android:id="@+id/userPlane_activeDate"
+                        android:id="@+id/userPlaneActiveDate"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="01/02/21"
@@ -124,7 +127,7 @@
                         android:textStyle="bold" />
 
                     <Space
-                        android:layout_width="@dimen/_5sdp"
+                        android:layout_width="@dimen/_3sdp"
                         android:layout_height="0dp" />
 
                     <ImageView
@@ -134,12 +137,12 @@
                         android:src="@drawable/ic_baseline_arrow_forward_24" />
 
                     <Space
-                        android:layout_width="@dimen/_5sdp"
+                        android:layout_width="@dimen/_3sdp"
                         android:layout_height="0dp" />
 
                     <TextView
                         android:layout_gravity="center"
-                        android:id="@+id/userPlane_deactivatedDate"
+                        android:id="@+id/userPlaneDeactivatedDate"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="31/02/21"
@@ -163,12 +166,13 @@
                     android:text="Bought:Sun,22 Oct. - 08:00" />
 
                 <Button
+                    android:id="@+id/status"
                     android:layout_width="@dimen/_100sdp"
                     android:layout_height="@dimen/_30sdp"
                     android:layout_alignParentRight="true"
                     android:layout_marginRight="@dimen/_6sdp"
                     android:background="@drawable/shape_status_button"
-                    android:text="status: On Going"
+                    android:text="status: On going"
                     android:textAllCaps="false"
                     android:textColor="@color/white"
                     android:textStyle="bold" />

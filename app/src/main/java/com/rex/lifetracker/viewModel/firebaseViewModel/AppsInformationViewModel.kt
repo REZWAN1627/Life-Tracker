@@ -1,19 +1,16 @@
 package com.rex.lifetracker.viewModel.firebaseViewModel
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import com.rex.lifetracker.model.FireBaseModel.AppsInformationModel
+import androidx.lifecycle.ViewModel
+import com.rex.lifetracker.model.FireBaseModel.AppsAdminDataModelPackage.AppsAdminModel
 import com.rex.lifetracker.repository.firebaseRepository.AppsInformationRepository
 
-class AppsInformationViewModel(application: Application) : AndroidViewModel(application) {
+class AppsInformationViewModel : ViewModel() {
 
-  private  val appsInformationRepository: AppsInformationRepository = AppsInformationRepository()
-    var getAppsInformationLiveData: MutableLiveData<AppsInformationModel?> =
-        MutableLiveData<AppsInformationModel?>()
+    private val appsInformationRepository: AppsInformationRepository = AppsInformationRepository()
 
-    fun getAppsInformation() {
-        getAppsInformationLiveData = appsInformationRepository.getAppsInformation()
-    }
+    val getAppsInformationLiveData: MutableLiveData<AppsAdminModel?> =
+        appsInformationRepository.getAppsInformation()
+
+
 }

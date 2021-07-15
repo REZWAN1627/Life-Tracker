@@ -5,7 +5,6 @@ import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
-import androidx.activity.result.ActivityResultCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProvider
@@ -23,6 +22,8 @@ import com.rex.lifetracker.utils.Constant.TAG
 import com.rex.lifetracker.view.userUi.UserInfo
 import com.rex.lifetracker.viewModel.LocalDataBaseVM.LocalDataBaseViewModel
 import com.rex.lifetracker.viewModel.firebaseViewModel.SignInViewModel
+import com.rex.lifetracker.viewModel.firebaseViewModel.TrustedContactsViewModel
+import com.rex.lifetracker.viewModel.firebaseViewModel.UserInfoViewModel
 import dmax.dialog.SpotsDialog
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.Disposable
@@ -33,6 +34,8 @@ class SignIn : AppCompatActivity() {
     private lateinit var binding: ActivitySignInBinding
     private lateinit var signInViewModel: SignInViewModel
     private lateinit var googleSignInClient: GoogleSignInClient
+    private lateinit var userInfoViewModel: UserInfoViewModel
+    private lateinit var trustedContactsViewModel: TrustedContactsViewModel
     private var isInternetConnected = false
     private var internetDisposable: Disposable? = null
     private lateinit var localDataBaseViewModel: LocalDataBaseViewModel
@@ -43,7 +46,7 @@ class SignIn : AppCompatActivity() {
         binding = ActivitySignInBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        if (intent.getStringExtra("Nuke") == "YES"){
+        if (intent.getStringExtra("Nuke") == "YES") {
             localDataBaseViewModel = ViewModelProvider(this).get(LocalDataBaseViewModel::class.java)
             localDataBaseViewModel.nukeTable()
         }
@@ -51,9 +54,11 @@ class SignIn : AppCompatActivity() {
         intiSignInViewModel()
         signInMethod()
 
+
         binding.apply {
             GsignIn.setOnClickListener {
                 if (isInternetConnected) {
+                    getFirebaseDataToLocalDataBase()
                     signIn()
                     return@setOnClickListener
                 } else {
@@ -68,6 +73,10 @@ class SignIn : AppCompatActivity() {
             }
         }
 
+
+    }
+
+    private fun getFirebaseDataToLocalDataBase() {
 
     }
 
@@ -92,32 +101,33 @@ class SignIn : AppCompatActivity() {
     }
 
 
-    var resultLauncher =
-        registerForActivityResult(ActivityResultContracts.StartActivityForResult(),
-            ActivityResultCallback { result ->
+    private var resultLauncher =
+        registerForActivityResult(
+            ActivityResultContracts.StartActivityForResult()
+        ) { result ->
 
 
-                if (result.resultCode == Activity.RESULT_OK) {
-                    val intent: Intent? = result.data
-                    val task = GoogleSignIn.getSignedInAccountFromIntent(intent)
-                    try {
+            if (result.resultCode == Activity.RESULT_OK) {
+                val intent: Intent? = result.data
+                val task = GoogleSignIn.getSignedInAccountFromIntent(intent)
+                try {
 
-                        val account = task.getResult(ApiException::class.java)!!
-                        Log.d(TAG, "google account: ${account.email}")
-                        if (account != null) {
+                    val account = task.getResult(ApiException::class.java)!!
+                    Log.d(TAG, "google account: ${account.email}")
+                    if (account != null) {
 
-                            //checkEmailExistsOrNot(account.email, account)
-                            getGoogleAuthCredential(account)
-                        }
-
-                    } catch (e: ApiException) {
-                        Toast.makeText(this, "Sign In Failed!", Toast.LENGTH_SHORT).show()
-                        Log.d(TAG, "Error!: $e ")
-
+                        //checkEmailExistsOrNot(account.email, account)
+                        getGoogleAuthCredential(account)
                     }
-                }
 
-            })
+                } catch (e: ApiException) {
+                    Toast.makeText(this, "Sign In Failed!", Toast.LENGTH_SHORT).show()
+                    Log.d(TAG, "Error!: $e ")
+
+                }
+            }
+
+        }
 
 
     private fun getGoogleAuthCredential(account: GoogleSignInAccount) {
@@ -156,7 +166,7 @@ class SignIn : AppCompatActivity() {
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe { isConnectedToInternet ->
-               isInternetConnected = isConnectedToInternet
+                isInternetConnected = isConnectedToInternet
             }
     }
 

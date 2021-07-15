@@ -5,7 +5,7 @@ import androidx.lifecycle.MutableLiveData
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
-import com.rex.lifetracker.model.FireBaseModel.AppsInformationModel
+import com.rex.lifetracker.model.FireBaseModel.AppsAdminDataModelPackage.*
 import com.rex.lifetracker.utils.Constant.TAG
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
@@ -17,31 +17,38 @@ class AppsInformationRepository {
 
     private val firebaseAuth = FirebaseAuth.getInstance()
     private val firebaseFirestore =
-        Firebase.firestore.collection("admin").document("OCMq9Y0bE3XkE4pSFC4IxOjkIKw2")
+        Firebase.firestore.collection("admin")
 
 
-    fun getAppsInformation(): MutableLiveData<AppsInformationModel?> {
+    fun getAppsInformation(): MutableLiveData<AppsAdminModel?> {
         val currentUser = firebaseAuth.currentUser!!.uid
         Log.d(TAG, "getAppsInformation: $currentUser")
-        val getFireStoreMutableLiveData: MutableLiveData<AppsInformationModel?> =
-            MutableLiveData<AppsInformationModel?>()
+        val getFireStoreMutableLiveData: MutableLiveData<AppsAdminModel?> =
+            MutableLiveData<AppsAdminModel?>()
 
         GlobalScope.launch(Dispatchers.IO) {
             try {
-                val data =
-                    firebaseFirestore.get().await().toObject(AppsInformationModel::class.java)
-                withContext(Dispatchers.Main) {
-                    getFireStoreMutableLiveData.postValue(data)
+
+               val info = firebaseFirestore.document("Information").get().await()
+                    .toObject(InformationModel::class.java)
+              val one =  firebaseFirestore.document("one_MonthPack").get().await()
+                    .toObject(One_Month_Pack_Model::class.java)
+             val six =   firebaseFirestore.document("six_MonthPack").get().await()
+                    .toObject(Six_Month_Pack_Model::class.java)
+              val twelve =  firebaseFirestore.document("twelve_Monthpack").get().await()
+                    .toObject(Twelve_Month_Pack_Model::class.java)
+                withContext(Dispatchers.Main){
+                    getFireStoreMutableLiveData.postValue(AppsAdminModel(
+                        info,one,six,twelve
+                    ))
                 }
+
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
                     Log.d(TAG, "getAppsInformation: exception happened ${e.message}")
-                    getFireStoreMutableLiveData.postValue(
-                        AppsInformationModel(
-                            "null", "null", "null", "null", "null",
-                            "null"
-                        )
-                    )
+                    getFireStoreMutableLiveData.postValue(AppsAdminModel(
+                        null,null,null,null
+                    ))
                 }
             }
 
@@ -49,25 +56,6 @@ class AppsInformationRepository {
         return getFireStoreMutableLiveData
 
 
-//        firebaseFirestore.collection("admin").document("OCMq9Y0bE3XkE4pSFC4IxOjkIKw2")
-//            .get()
-//            .addOnSuccessListener {
-//                Log.d(TAG, "getAppsInfoFromDataBase: ${it["info"].toString()}")
-//                val user = AppsInformationModel(
-//
-//                    it["info"].toString(),
-//                    it["bought_date_time"].toString(),
-//                    it["cost"].toString(),
-//                    it["monthly_sub_pack"].toString(),
-//                    it["plan"].toString(),
-//                    it["status"].toString()
-//
-//                )
-//                getFireStoreMutableLiveData.setValue(user)
-//            }.addOnFailureListener { exception ->
-//                Log.d(TAG, "get failed with ", exception)
-//            }
-//        return getFireStoreMutableLiveData
     }
 
 

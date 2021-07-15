@@ -135,30 +135,17 @@ class ManageTrustedContactsList : AppCompatActivity() {
     //--------------------upload firebase-------------------//
 
     private fun uploadDataToFireBase(NumberList: List<SOSContacts_Entity>?) {
+        val dialogue =
+            SpotsDialog.Builder().setContext(this).setTheme(R.style.Custom)
+                .setCancelable(true).build()
+        dialogue?.show()
 
         val mainJob = CoroutineScope(Dispatchers.IO).launch {
-            val job2 = launch {
-                if (NumberList != null) {
-                    if (NumberList.isNotEmpty()) {
-                        for (number in NumberList) {
-                            if (number.Image != null) {
-                                trustedContactsViewModel.updateDataTOFireBase(
-                                    number, getByte(number.Image!!)
-                                )
-                            } else {
-                                trustedContactsViewModel.updateDataTOFireBase(
-                                    number, null
-                                )
-                            }
-                        }
-
-                    }
-                }
-
-            }
+            val job2 = updateWithoutNullPicture(NumberList)
 
         }
         mainJob.invokeOnCompletion {
+            dialogue.dismiss()
             Log.d(TAG, "uploadDataToFireBase: done")
             startActivity(
                 Intent(this, MainActivity::class.java).putExtra(
@@ -171,6 +158,19 @@ class ManageTrustedContactsList : AppCompatActivity() {
         }
 
     }
+
+    private fun updateWithoutNullPicture(NumberList: List<SOSContacts_Entity>?) {
+        if (NumberList!!.isNotEmpty()){
+            for (number in NumberList){
+                    trustedContactsViewModel.updateDataTOFireBase(
+                        number, getByte(number.Image!!)
+                    )
+            }
+
+        }
+
+    }
+
 
 
     //---------------Network-----------------//

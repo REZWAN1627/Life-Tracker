@@ -46,7 +46,7 @@ interface LocalDataBaseDao {
     fun readAllContacts(): LiveData<List<SOSContacts_Entity>>
 
     @Query("SELECT * FROM personal_info")
-    fun readAllUserInfo(): LiveData<List<PersonalInfo_Entity>>
+    fun readAllUserInfo(): LiveData<PersonalInfo_Entity>
 
     @Query("SELECT * FROM sim_table")
     fun readAllSIMSlot(): LiveData<List<SIM_Entity>>

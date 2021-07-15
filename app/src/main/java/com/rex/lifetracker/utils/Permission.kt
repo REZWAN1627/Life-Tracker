@@ -16,6 +16,9 @@ object Permission {
                 Manifest.permission.SEND_SMS,
                 Manifest.permission.ACCESS_COARSE_LOCATION,
                 Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.RECORD_AUDIO,
+                Manifest.permission.READ_EXTERNAL_STORAGE,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE
             )
         } else {
             EasyPermissions.hasPermissions(
@@ -27,6 +30,9 @@ object Permission {
                 Manifest.permission.ACCESS_COARSE_LOCATION,
                 Manifest.permission.ACCESS_FINE_LOCATION,
                 Manifest.permission.FOREGROUND_SERVICE,
+                Manifest.permission.RECORD_AUDIO,
+                Manifest.permission.READ_EXTERNAL_STORAGE,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE,
                 Manifest.permission.ACCESS_BACKGROUND_LOCATION
             )
         }

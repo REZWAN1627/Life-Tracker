@@ -41,7 +41,7 @@ class SignInRepository {
 
     //collect user info  from authentication..........
 
-    fun collectUserData(): MutableLiveData<SignInUser>? {
+    fun collectUserData(): MutableLiveData<SignInUser> {
         val collectUserMutableLiveData = MutableLiveData<SignInUser>()
         val currentUser = firebaseAuth.currentUser
         if (currentUser != null) {
@@ -53,6 +53,7 @@ class SignInRepository {
             val imageUrl = getImageUrl.toString()
             val user = SignInUser(uId, name.toString(), email.toString(), imageUrl.toString(),true)
             collectUserMutableLiveData.value = user
+            Log.d(TAG, "collectUserData: $user")
         }
         return collectUserMutableLiveData
     }

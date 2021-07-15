@@ -6,7 +6,7 @@
     app:startDestination="@id/mapsFragment">
 
     <action android:id="@+id/action_global_fragment"
-        app:destination="@+id/mapsFragment"
+        app:destination="@+id/promotion2"
         app:launchSingleTop="true"/>
     <fragment
         android:id="@+id/profile"
@@ -23,5 +23,20 @@
         android:name="com.rex.lifetracker.view.fragment.MapsFragment"
         android:label="fragment_maps"
         tools:layout="@layout/fragment_maps" />
+    <fragment
+        android:id="@+id/information2"
+        android:name="com.rex.lifetracker.view.fragment.notificationTabItem.Information"
+        android:label="fragment_information"
+        tools:layout="@layout/fragment_information" />
+    <fragment
+        android:id="@+id/promotion2"
+        android:name="com.rex.lifetracker.view.fragment.notificationTabItem.Promotion"
+        android:label="fragment_promotion"
+        tools:layout="@layout/fragment_promotion" />
+    <fragment
+        android:id="@+id/yourPlan2"
+        android:name="com.rex.lifetracker.view.fragment.notificationTabItem.YourPlan"
+        android:label="fragment_your_plan"
+        tools:layout="@layout/fragment_your_plan" />
 
 </navigation>

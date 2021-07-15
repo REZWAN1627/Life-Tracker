@@ -86,7 +86,7 @@ class Splash : AppCompatActivity() {
     }
 
     private fun goToSignInActivity() {
-        Log.d(TAG, "goToSignInActivity: is called")
+      //  Log.d(TAG, "goToSignInActivity: is called")
         startActivity(Intent(this, SignIn::class.java).putExtra("Nuke", "NO"))
         finish()
     }
@@ -106,19 +106,19 @@ class Splash : AppCompatActivity() {
                 when (isConnectedToInternet) {
                     true -> {
 
-                        Log.d(TAG, "onCreate: has internet")
+                       // Log.d(TAG, "onCreate: has internet")
 
                         checkIfUserIsAuthenticated()
 
 
                     }
                     else -> {
-                        Log.d(TAG, "onResume: no internet")
+                      //  Log.d(TAG, "onResume: no internet")
 
                         localDataBaseViewModel.readAllContacts.observe(
                             this,
                             { list ->
-                                Log.d(TAG, "localdatabase size -> ${list.size}")
+                              //  Log.d(TAG, "localdatabase size -> ${list.size}")
                                 if (list.isEmpty()) {
                                     Handler(Looper.getMainLooper()).postDelayed({
                                         startActivity(

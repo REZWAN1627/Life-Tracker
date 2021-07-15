@@ -1,13 +1,13 @@
-package com.rex.lifetracker.view
+package com.rex.lifetracker.service
 
-import android.Manifest
 import android.annotation.SuppressLint
+import android.app.Notification
+import android.app.PendingIntent
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.database.Cursor
 import android.location.Location
+import android.media.RingtoneManager
 import android.net.Uri
-import android.os.Bundle
 import android.provider.CallLog
 import android.telecom.PhoneAccountHandle
 import android.telecom.TelecomManager
@@ -16,21 +16,19 @@ import android.telephony.SmsManager
 import android.telephony.SubscriptionManager
 import android.telephony.TelephonyManager
 import android.util.Log
-import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
-import androidx.lifecycle.ViewModelProvider
+import androidx.core.app.NotificationCompat
+import androidx.lifecycle.LifecycleService
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
-import com.rex.lifetracker.databinding.ActivitySosBinding
-import com.rex.lifetracker.utils.Constant.REQUEST_PERMISSION
-import com.rex.lifetracker.utils.Constant.TAG
+import com.rex.lifetracker.R
+import com.rex.lifetracker.service.broadcast_receiver.SystemShakeAlert_broadcastReceiver
+import com.rex.lifetracker.utils.Constant
+import com.rex.lifetracker.view.MainActivity
 import com.rex.lifetracker.viewModel.LocalDataBaseVM.LocalDataBaseViewModel
-import java.text.SimpleDateFormat
 import java.util.*
 
+class CallingServices : LifecycleService() {
 
-class SOS : AppCompatActivity() {
     private var count = 0
     private var count2 = 0
     private var calling = false
@@ -38,7 +36,6 @@ class SOS : AppCompatActivity() {
     private lateinit var telephonyManager: TelephonyManager
     private lateinit var smsManager: SmsManager
     private lateinit var fusedLocationClient: FusedLocationProviderClient
-    private lateinit var binding: ActivitySosBinding
     private lateinit var SOSNumber2: String
     private lateinit var sms: String
     private val messagingNumber = ArrayList<String>()
@@ -50,12 +47,11 @@ class SOS : AppCompatActivity() {
     private var simSlotNumber = 0
     private lateinit var localDataBaseViewModel: LocalDataBaseViewModel
 
-
     private var mPhoneStateListener: PhoneStateListener = object : PhoneStateListener() {
 
         override fun onCallStateChanged(state: Int, number: String) {
 
-            Log.d(TAG, "onCallStateChanged: is called ")
+            Log.d(Constant.TAG, "onCallStateChanged: is called ")
             when (state) {
 
                 TelephonyManager.CALL_STATE_IDLE -> {
@@ -65,7 +61,7 @@ class SOS : AppCompatActivity() {
 
                     } else if (calling && duration <= 1 && count < callingNumber.size) {
                         callingFirst = false
-                        Log.d(TAG, "onCallStateChanged: count $count")
+                        Log.d(Constant.TAG, "onCallStateChanged: count $count")
                         count2++
 
                         if (count2 == 2) {
@@ -79,7 +75,7 @@ class SOS : AppCompatActivity() {
                         }
 
                     } else {
-                        Log.d(TAG, "onCallStateChanged: unregister is called")
+                        Log.d(Constant.TAG, "onCallStateChanged: unregister is called")
                         count = 0
                         count2 = 0
                         unregisterTelephoneListen()
@@ -89,7 +85,7 @@ class SOS : AppCompatActivity() {
 
 
             }
-            Log.d(TAG, "onCallStateChanged last call duration ---- else: $duration")
+            Log.d(Constant.TAG, "onCallStateChanged last call duration ---- else: $duration")
             duration = getLastCallDuration()
 
             // Toast.makeText(this@SOS, "Help", Toast.LENGTH_SHORT).show()
@@ -98,40 +94,66 @@ class SOS : AppCompatActivity() {
     }
 
     private fun unregisterTelephoneListen() {
-        Log.d(TAG, "unregisterTelephoneListen: is called")
+        Log.d(Constant.TAG, "unregisterTelephoneListen: is called")
         telephonyManager.listen(mPhoneStateListener, PhoneStateListener.LISTEN_NONE)
+        stopSelf()
+        this.startActivity(
+            Intent(
+                this,
+                MainActivity::class.java
+            ).setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        )
 
-
-        startActivity(Intent(this, MainActivity::class.java).putExtra("Service", "RESTART"))
-        finish()
     }
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        binding = ActivitySosBinding.inflate(layoutInflater)
-        setContentView(binding.root)
-
-
-        telephonyManager = getSystemService(TELEPHONY_SERVICE) as TelephonyManager
+    override fun onCreate() {
+        super.onCreate()
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
-
-        if (count == 0) {
-            initModelView()
-            checkSimSlot()
-        }
-
+        telephonyManager = getSystemService(TELEPHONY_SERVICE) as TelephonyManager
 
     }
 
-    private fun initModelView() {
 
-        localDataBaseViewModel = ViewModelProvider(this).get(LocalDataBaseViewModel::class.java)
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        ForeGroundStart()
 
+
+        return super.onStartCommand(intent, flags, startId)
+    }
+
+
+    private fun ForeGroundStart() {
+        localDataBaseViewModel = LocalDataBaseViewModel(this.application)
         arrangeArrayList()
+        checkSimSlot()
+        MotionDetectService.isTracking.postValue(true)
 
 
+        val stopService = PendingIntent.getBroadcast(
+            this,
+            Constant.BROADCAST_REQUEST_CODE,
+            Intent(this, SystemShakeAlert_broadcastReceiver::class.java).also {
+                it.action = Constant.STOP_SERVICE_ACTION_CALL
+            },
+            PendingIntent.FLAG_CANCEL_CURRENT
+        )
+
+
+        val notification = NotificationCompat.Builder(this, Constant.CHANNEL_ID_CALLING)
+            .setContentTitle("Emergency Calling Services")
+            .setContentText("Calling Services")
+            .setSmallIcon(R.drawable.ic_baseline_call_24)
+            .addAction(R.color.RED, "Stop Emergency Calling Services", stopService)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setPriority(NotificationCompat.PRIORITY_MAX)
+            .setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION))
+            // .setContentIntent(pendingIntent)
+            .build()
+        notification.visibility = Notification.VISIBILITY_PUBLIC
+        startForeground(Constant.FOREGROUND_NOTIFICATION_ID2, notification)
     }
+
 
     private fun arrangeArrayList() {
         localDataBaseViewModel.readAllContacts.observe(this, {
@@ -140,7 +162,7 @@ class SOS : AppCompatActivity() {
             while (i < it.size) {
                 when (it[i].Priority) {
                     "First" -> {
-                        Log.d(TAG, "initModelView: index $i is first")
+                        Log.d(Constant.TAG, "initModelView: index $i is first")
                         if (callingNumber.isEmpty()) {
                             callingNumber.add(0, it[i].Phone)
                         } else {
@@ -151,16 +173,19 @@ class SOS : AppCompatActivity() {
 
                     }
                     "Second" -> {
-                        Log.d(TAG, "initModelView: index $i is second")
+                        Log.d(Constant.TAG, "initModelView: index $i is second")
 
                         when {
                             callingNumber.isEmpty() -> {
                                 SOSNumber2 = it[i].Phone
-                                Log.d(TAG, "initModelView: phone $SOSNumber2")
+                                Log.d(Constant.TAG, "initModelView: phone $SOSNumber2")
                                 callingNumber.add(i, it[i + 1].Phone)
                                 index = i
-                                Log.d(TAG, "initModelView: index --- > $index")
-                                Log.d(TAG, "initModelView: short array -- > $callingNumber")
+                                Log.d(Constant.TAG, "initModelView: index --- > $index")
+                                Log.d(
+                                    Constant.TAG,
+                                    "initModelView: short array -- > $callingNumber"
+                                )
                                 indexFlag = true
 
                             }
@@ -187,15 +212,15 @@ class SOS : AppCompatActivity() {
             }
 
             if (indexFlag) {
-                Log.d(TAG, "initModelView: flag is true")
+                Log.d(Constant.TAG, "initModelView: flag is true")
                 callingNumber[index + 1] = SOSNumber2
             }
 
-            Log.d(TAG, "initModelView: list number array $messagingNumber")
-            Log.d(TAG, "initModelView: list number array sorted --->  $callingNumber")
-
+            Log.d(Constant.TAG, "initModelView: list number array $messagingNumber")
+            Log.d(Constant.TAG, "initModelView: list number array sorted --->  $callingNumber")
 
             getCurrentLocation()
+
 
         })
     }
@@ -227,41 +252,25 @@ class SOS : AppCompatActivity() {
     }
 
 
+    @SuppressLint("MissingPermission")
     private fun getCurrentLocation() {
-        if (ActivityCompat.checkSelfPermission(
-                this,
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
-                this,
-                Manifest.permission.ACCESS_COARSE_LOCATION
-            ) != PackageManager.PERMISSION_GRANTED
-        ) {
-            ActivityCompat.requestPermissions(
-                this,
-                arrayOf(
-                    Manifest.permission.ACCESS_FINE_LOCATION,
-                    Manifest.permission.ACCESS_COARSE_LOCATION
-                ),
-                REQUEST_PERMISSION
-            )
-            return
-        } else {
 
-            fusedLocationClient.lastLocation
-                .addOnSuccessListener { location: Location? ->
-                    // Got last known location. In some rare situations this can be null.
-                    if (location != null) {
-                        Log.d(TAG, "getCurrentLocation: ${location.latitude},${location.longitude}")
-                        sms =
-                            "https://maps.google.com/?q=${location.latitude},${location.longitude}"
-                        Log.d(TAG, "getCurrentLocation: is $sms")
-                        sendSms(sms)
+        fusedLocationClient.lastLocation
+            .addOnSuccessListener { location: Location? ->
+                // Got last known location. In some rare situations this can be null.
+                if (location != null) {
+                    Log.d(
+                        Constant.TAG,
+                        "getCurrentLocation: ${location.latitude},${location.longitude}"
+                    )
+                    sms =
+                        "https://maps.google.com/?q=${location.latitude},${location.longitude}"
+                    Log.d(Constant.TAG, "getCurrentLocation: is $sms")
+                    sendSms(sms)
 
 
-                    }
                 }
-
-        }
+            }
 
 
     }
@@ -283,7 +292,7 @@ class SOS : AppCompatActivity() {
     private fun makePhoneCall(number: String) {
 
         if (simSlotFlag) {
-            Log.e(TAG, "makePhoneCall: has sim slot")
+            Log.e(Constant.TAG, "makePhoneCall: has sim slot")
             var phoneAccountHandleList: List<PhoneAccountHandle?> = emptyList()
             val item = simSlotNumber // 0 for sim1 & 1 for sim2
 
@@ -338,9 +347,14 @@ class SOS : AppCompatActivity() {
             startActivity(intent)
 
         } else {
-            Log.e(TAG, "makePhoneCall: default sim slot")
-            startActivity(Intent(Intent.ACTION_CALL, Uri.parse("tel:$number")))
-            Log.d(TAG, "makePhoneCall: is called")
+            Log.e(Constant.TAG, "makePhoneCall: default sim slot")
+            startActivity(
+                Intent(
+                    Intent.ACTION_CALL,
+                    Uri.parse("tel:$number")
+                ).setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            )
+            Log.d(Constant.TAG, "makePhoneCall: is called")
         }
 
 
@@ -357,13 +371,13 @@ class SOS : AppCompatActivity() {
 
         if (cur != null && cur.moveToFirst()) {
             Log.d(
-                TAG,
+                Constant.TAG,
                 "getLastCallDuration: is called is --------> " + cur.getString(
                     cur.getColumnIndex(CallLog.Calls.DURATION)
                 )
             )
             duration = if (callingFirst) {
-                Log.d(TAG, "getLastCallDuration: first")
+                Log.d(Constant.TAG, "getLastCallDuration: first")
                 0
                 //callingFirst = false
             } else {
@@ -378,58 +392,11 @@ class SOS : AppCompatActivity() {
         return duration
     }
 
-
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == REQUEST_PERMISSION) {
-            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-
-                getCurrentLocation()
-            } else {
-                Toast.makeText(this, "need to access map", Toast.LENGTH_SHORT).show()
-                getCurrentLocation()
-
-            }
-        }
+    override fun onDestroy() {
+        duration = 0
+        count = 0
+        count2 = 0
+        telephonyManager.listen(mPhoneStateListener, PhoneStateListener.LISTEN_NONE)
+        super.onDestroy()
     }
-
-
-    override fun onPostResume() {
-        //  duration = getLastCallDuration()
-//        if (duration > 1) {
-//            Log.d(TAG, "onPostResume: is called")
-//            unregisterTelephoneListen()
-//        }
-//        Log.d(
-//            TAG,
-//            "onPostResume: is called SOS ${SimpleDateFormat("dd.MM.yyyy hh:mm:ss").format(Calendar.getInstance().time)}"
-//        )
-        super.onPostResume()
-    }
-
-    override fun onPause() {
-        //  duration = getLastCallDuration()
-//        if (duration > 1){
-//            unregisterTelephoneListen()
-//        }
-        Log.d(
-            TAG,
-            "onPause: is called after ${SimpleDateFormat("dd.MM.yyyy hh:mm:ss").format(Calendar.getInstance().time)}"
-        )
-        super.onPause()
-    }
-
-    override fun onStart() {
-        Log.d(
-            TAG,
-            "onStart: is called ${SimpleDateFormat("dd.MM.yyyy hh:mm:ss").format(Calendar.getInstance().time)}"
-        )
-        super.onStart()
-    }
-
-
 }

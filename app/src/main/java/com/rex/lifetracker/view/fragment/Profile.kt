@@ -53,14 +53,14 @@ class Profile : Fragment(R.layout.fragment_profile), EasyPermissions.PermissionC
 
                 Glide.with(requireContext())
                     .asBitmap()
-                    .load(userInfo[0].Image)
+                    .load(userInfo.Image)
                     .placeholder(R.drawable.ic_man)
                     .into(editProfileImage)
                 editProfileImage.visibility = View.VISIBLE
                 addEditPhotoIcon.visibility = View.GONE
-                editprofileFirstName.setText(userInfo[0].First_Name)
-                editprofileLastName.setText(userInfo[0].Last_Name)
-                edituserEmail.text = userInfo[0].User_Email
+                editprofileFirstName.setText(userInfo.First_Name)
+                editprofileLastName.setText(userInfo.Last_Name)
+                edituserEmail.text = userInfo.User_Email
 
                 editTakeProfileImage.setOnClickListener {
                     checkPhotoPermission()
@@ -80,9 +80,12 @@ class Profile : Fragment(R.layout.fragment_profile), EasyPermissions.PermissionC
                             uploadToDatabase(
                                 editprofileFirstName.text.toString(),
                                 editprofileLastName.text.toString(),
-                                userInfo[0].Deactivate_Time,
-                                userInfo[0].Active_Time,
-                                userInfo[0].User_Email,
+                                userInfo.Deactivate_Time,
+                                userInfo.Active_Time,
+                                userInfo.Subscription_Pack,
+                                userInfo.brought_pack_time,
+                                userInfo.status,
+                                userInfo.User_Email,
                                 imageUri
                             )
                             Toast.makeText(
@@ -94,14 +97,9 @@ class Profile : Fragment(R.layout.fragment_profile), EasyPermissions.PermissionC
 
                             localDataBaseViewModel.addUserInfo(
                                 PersonalInfo_Entity(
-                                    0,
-                                    editprofileFirstName.text.toString(),
-                                    editprofileLastName.text.toString(),
-                                    userInfo[0].Deactivate_Time,
-                                    userInfo[0].Active_Time,
-                                    userInfo[0].User_Email,
-                                    userInfo[0].Image
-
+                                    0,editprofileFirstName.text.toString(),editprofileLastName.text.toString(),
+                                    userInfo.Deactivate_Time,userInfo.Active_Time,userInfo.Subscription_Pack,userInfo.brought_pack_time
+                                ,userInfo.status,userInfo.User_Email,userInfo.Image
                                 )
                             )
                             Toast.makeText(
@@ -123,6 +121,9 @@ class Profile : Fragment(R.layout.fragment_profile), EasyPermissions.PermissionC
         LastName: String,
         deactivateTime: String,
         activeTime: String,
+        subscriptionPack: String,
+        broughtPackTime: String,
+        status: String,
         userEmail: String,
         imageUri: Uri?
     ) {
@@ -140,6 +141,9 @@ class Profile : Fragment(R.layout.fragment_profile), EasyPermissions.PermissionC
                         LastName,
                         deactivateTime,
                         activeTime,
+                        subscriptionPack,
+                        broughtPackTime,
+                        status,
                         userEmail,
                         getBitmap(imageUri.toString())
 

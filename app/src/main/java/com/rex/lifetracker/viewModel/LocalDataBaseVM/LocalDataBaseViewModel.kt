@@ -17,7 +17,7 @@ import kotlinx.coroutines.launch
 
 class LocalDataBaseViewModel(application: Application) : AndroidViewModel(application) {
     val readAllContacts: LiveData<List<SOSContacts_Entity>>
-    val realAllUserInfo: LiveData<List<PersonalInfo_Entity>>
+    val realAllUserInfo: LiveData<PersonalInfo_Entity>
     val readAllSIMSlot: LiveData<List<SIM_Entity>>
     val readAllCache: LiveData<List<deleteContactsCacheModel>>
     private val databaseRepository: LocalDataBaseRepository
@@ -114,7 +114,7 @@ class LocalDataBaseViewModel(application: Application) : AndroidViewModel(applic
         }
     }
 
-    fun nukeTable(){
+    fun nukeTable() {
         viewModelScope.launch(Dispatchers.IO) {
             databaseRepository.nukeTable()
         }

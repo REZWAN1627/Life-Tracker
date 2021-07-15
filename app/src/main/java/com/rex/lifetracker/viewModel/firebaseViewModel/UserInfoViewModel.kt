@@ -14,8 +14,8 @@ class UserInfoViewModel(application: Application) : AndroidViewModel(application
     var insertResultLiveData: LiveData<String>? = null
     var getUserInfoLiveData: MutableLiveData<UserInfoModel?> = userInfoRepository.getUserInfoFromDataBase()
 
-    fun insert(userinfo: UserInfoModel) {
-        insertResultLiveData = userInfoRepository.insertUserInfoFirebase(userinfo)
+    fun insert(userinfo: UserInfoModel,image: ByteArray?) {
+        insertResultLiveData = userInfoRepository.insertUserInfoFirebase(userinfo,image)
     }
 
 

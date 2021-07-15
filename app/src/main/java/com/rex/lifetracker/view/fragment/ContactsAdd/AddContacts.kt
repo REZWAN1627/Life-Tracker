@@ -2,6 +2,7 @@ package com.rex.lifetracker.view.fragment.ContactsAdd
 
 import android.Manifest
 import android.app.Activity
+import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
@@ -85,16 +86,27 @@ class AddContacts : Fragment(R.layout.fragment_add_contacts), EasyPermissions.Pe
 
 
                     } else {
-
-                            localDataBaseViewModel.addContacts(
-                                SOSContacts_Entity(
-                                    contactNumber.text.toString(),
-                                    "null",
-                                    contactName.text.toString(),
-                                    null
-
-                                )
+                        Log.d(TAG, "onViewCreated: is called for no image ${R.drawable.defaultimage}")
+                        val imageUri = Uri.parse(
+                            ContentResolver.SCHEME_ANDROID_RESOURCE +
+                                    "://" + resources.getResourcePackageName(R.drawable.defaultimage)
+                                    + '/' + resources.getResourceTypeName(R.drawable.defaultimage) + '/' + resources.getResourceEntryName(
+                                R.drawable.defaultimage
                             )
+                        )
+
+                       lifecycleScope.launch {
+                           localDataBaseViewModel.addContacts(
+                               SOSContacts_Entity(
+                                   contactNumber.text.toString(),
+                                   "null",
+                                   contactName.text.toString(),
+                                   getBitmap(imageUri.toString())
+
+
+                               )
+                           )
+                       }
 
                         findNavController().navigate(R.id.action_addContacts2_to_listContacts)
                     }
@@ -258,4 +270,6 @@ class AddContacts : Fragment(R.layout.fragment_add_contacts), EasyPermissions.Pe
         val result = (loading.execute(request) as SuccessResult).drawable
         return (result as BitmapDrawable).bitmap
     }
+
+
 }

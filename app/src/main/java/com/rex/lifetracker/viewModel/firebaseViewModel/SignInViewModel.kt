@@ -12,7 +12,7 @@ class SignInViewModel(application: Application) : AndroidViewModel(application) 
     private var  signInRepository : SignInRepository = SignInRepository()
 
     var checkAuthenticateLiveData: LiveData<SignInUser>? = null
-    var collectUserInfoLiveData: LiveData<SignInUser>? = null
+    var collectUserInfoLiveData: LiveData<SignInUser> = signInRepository.collectUserData()
     var authenticateUserLiveData: LiveData<String>? = null
 
     //firebase sign in with google
@@ -23,9 +23,7 @@ class SignInViewModel(application: Application) : AndroidViewModel(application) 
     fun checkAuth(){
         checkAuthenticateLiveData = signInRepository.checkAuthenticationInFirebase()
     }
-    fun collectUserData(){
-        collectUserInfoLiveData = signInRepository.collectUserData()
-    }
+
 
 
 }

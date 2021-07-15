@@ -3,12 +3,14 @@ package com.rex.lifetracker.view
 import android.Manifest
 import android.animation.ObjectAnimator
 import android.app.Activity
+import android.app.AppOpsManager
 import android.app.Dialog
 import android.app.NotificationManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.location.LocationManager
 import android.net.Uri
@@ -16,6 +18,7 @@ import android.os.*
 import android.provider.Settings
 import android.util.Log
 import android.util.TypedValue
+import android.view.KeyEvent
 import android.view.View
 import android.view.Window
 import android.widget.Button
@@ -32,7 +35,6 @@ import androidx.navigation.fragment.findNavController
 import androidx.navigation.ui.NavigationUI
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.bumptech.glide.Glide
-import com.github.pwittchen.reactivenetwork.library.rx2.ReactiveNetwork
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
@@ -40,6 +42,8 @@ import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.*
 import com.google.android.material.bottomsheet.BottomSheetBehavior
+import com.google.android.material.snackbar.BaseTransientBottomBar
+import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 import com.rex.lifetracker.R
@@ -52,18 +56,15 @@ import com.rex.lifetracker.service.broadcast_receiver.GpsLocationReceiver
 import com.rex.lifetracker.utils.Constant.ACTION_START_SERVICE
 import com.rex.lifetracker.utils.Constant.ACTION_STOP_SERVICE
 import com.rex.lifetracker.utils.Constant.GPS_PERMISSION_CODE
-import com.rex.lifetracker.utils.Constant.MOTION_ALERT_SYSTEM_NOTIFICATION_ID
-import com.rex.lifetracker.utils.Constant.MOTION_ALERT_SYSTEM_NOTIFICATION_ID2
 import com.rex.lifetracker.utils.Constant.REQUESTED_PERMISSION_CODE
 import com.rex.lifetracker.utils.Constant.TAG
+import com.rex.lifetracker.utils.ManufactureDevicesList
 import com.rex.lifetracker.utils.Permission
 import com.rex.lifetracker.viewModel.LocalDataBaseVM.LocalDataBaseViewModel
 import com.vmadalin.easypermissions.EasyPermissions
 import com.vmadalin.easypermissions.dialogs.SettingsDialog
 import dmax.dialog.SpotsDialog
-import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.disposables.Disposable
-import io.reactivex.schedulers.Schedulers
+import java.lang.reflect.Method
 import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.TimeUnit
@@ -72,8 +73,10 @@ import java.util.concurrent.TimeUnit
 class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
     private lateinit var binding: ActivityMainBinding
     private lateinit var startDateValue: Date
+    private lateinit var startDateValue2: Date
     private val simpleDateFormat: SimpleDateFormat = SimpleDateFormat("dd.MM.yyyy")
     private lateinit var endDateValue: Date
+    private lateinit var endDateValue2: Date
     private var appsState = false
     private var sosActivityState = false
     private val calendar = Calendar.getInstance()
@@ -83,8 +86,11 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
     private lateinit var googleSignInClient: GoogleSignInClient
     private lateinit var localDataBaseViewModel: LocalDataBaseViewModel
     private lateinit var userActiveTime: String
-    private var isInternetConnected = false
-    private var internetDisposable: Disposable? = null
+
+    private var packageOrTrileOver = false
+
+    //    private var isInternetConnected = false
+//    private var internetDisposable: Disposable? = null
     private var timeCountInMilliSeconds = (30 * 1000).toLong()
     private var countDownTimer: CountDownTimer? = null
     private var mSettingClient: SettingsClient? = null
@@ -93,6 +99,12 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
     private var mLocationRequest: LocationRequest? = null
     private var callFlag = false
 
+    //    private val CHECK_OP_NO_THROW = "checkOpNoThrow"
+//    private val OP_POST_NOTIFICATION = "OP_POST_NOTIFICATION"
+    private lateinit var notificationManager: NotificationManager
+
+    private var devicesName = ""
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -100,7 +112,7 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-
+        Log.d(TAG, "onCreate: ${android.os.Build.MANUFACTURER}")
 
         requestPermission()
         initViewModel()
@@ -109,6 +121,7 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
         setObservers()
         registerGPS()
 
+
 //------------------------------------binding----------------------------------------//
         binding.apply {
 
@@ -116,14 +129,14 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
             GpsLocationReceiver.GPSEnable.observe(this@MainActivity, {
                 if (it == true) {
                     callFlag = false
-                    Log.d(TAG, "onCreate: enable")
+                    // Log.d(TAG, "onCreate: enable")
                 } else {
 
                     if (!callFlag) {
                         checkGPS()
                     }
 
-                    Log.d(TAG, "onCreate: disable")
+                    //Log.d(TAG, "onCreate: disable")
                 }
             })
 
@@ -163,10 +176,8 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
                 BottomSheetBehavior.from(bottomSheet2).state = BottomSheetBehavior.STATE_COLLAPSED
                 bottomSheet2.visibility = View.GONE
                 BottomSheetBehavior.from(bottomSheet).state = BottomSheetBehavior.STATE_EXPANDED
-                val notificationManager =
-                    getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-                notificationManager.cancel(MOTION_ALERT_SYSTEM_NOTIFICATION_ID)
-                notificationManager.cancel(MOTION_ALERT_SYSTEM_NOTIFICATION_ID2)
+
+                notificationManager.cancelAll()
                 serviceStart()
             }
 
@@ -211,26 +222,24 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
                         this.action = ACTION_STOP_SERVICE
                     })
 
-
             }
 
             //adding more trusted contacts
             addMoreContacts.setOnClickListener {
-                startService(
-                    Intent(
-                        this@MainActivity,
-                        MotionDetectService::class.java
-                    ).apply {
-                        this.action = ACTION_STOP_SERVICE
-                    })
-                finish()
+//                startService(
+//                    Intent(
+//                        this@MainActivity,
+//                        MotionDetectService::class.java
+//                    ).apply {
+//                        this.action = ACTION_STOP_SERVICE
+//                    })
+
                 startActivity(
                     Intent(
                         this@MainActivity,
                         TrustedNumberDetails::class.java
                     )
                 )
-                finish()
             }
 
             //loging out button
@@ -253,21 +262,21 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
             }
             navAddContacts.setOnClickListener {
 
-                startService(
-                    Intent(
-                        this@MainActivity,
-                        MotionDetectService::class.java
-                    ).apply {
-                        this.action = ACTION_STOP_SERVICE
-                    })
-                finish()
+//                startService(
+//                    Intent(
+//                        this@MainActivity,
+//                        MotionDetectService::class.java
+//                    ).apply {
+//                        this.action = ACTION_STOP_SERVICE
+//                    })
+
                 startActivity(
                     Intent(
                         this@MainActivity,
                         TrustedNumberDetails::class.java
                     )
                 )
-                finish()
+
 
             }
         }
@@ -276,7 +285,7 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
     }
 
     //navigate to fragment if needed
-    private fun navigateToFramentIfNeeded(action:String?){
+    private fun navigateToFramentIfNeeded() {
 
         navHostFragment.findNavController().navigate(R.id.action_global_fragment)
 
@@ -285,7 +294,7 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
 
 
     private fun registerGPS() {
-        Log.d(TAG, "registerGPS: is called")
+        // Log.d(TAG, "registerGPS: is called")
         val br: BroadcastReceiver = GpsLocationReceiver()
         val filter = IntentFilter(LocationManager.PROVIDERS_CHANGED_ACTION)
         registerReceiver(br, filter)
@@ -304,7 +313,7 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
                 supportFragmentManager.findFragmentById(fragmentContainerView.id) as NavHostFragment
             navController = navHostFragment.navController
             NavigationUI.setupWithNavController(bottomNavigationView, navController)
-            navHostFragment.findNavController().navigate(R.id.action_global_fragment)
+
 
             //recycler setup
             recyclerViewSheet.apply {
@@ -353,6 +362,10 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
 
     private fun initViewModel() {
 
+        devicesName = Build.MANUFACTURER
+        notificationManager =
+            getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
         //location init//
 
 
@@ -366,18 +379,16 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
                 LocationSettingsRequest.Builder().addLocationRequest(mLocationRequest).build()
         }
 
+
         //local database
         localDataBaseViewModel = ViewModelProvider(this).get(LocalDataBaseViewModel::class.java)
-        val dialogue =
-            SpotsDialog.Builder().setContext(this).setTheme(R.style.Custom)
-                .setCancelable(true).build()
-        dialogue?.show()
+
+        //checking trail
         localDataBaseViewModel.realAllUserInfo.observe(this, {
-            if (it.isNotEmpty()) {
-                dialogue?.dismiss()
-                trailCalculation(userActiveTime, it[0].Deactivate_Time)
+            if (it != null) {
+                trailCalculation(userActiveTime, it.Deactivate_Time)
             } else {
-                dialogue?.dismiss()
+
                 Toast.makeText(this, "reload the apps again", Toast.LENGTH_SHORT).show()
             }
 
@@ -400,28 +411,34 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
 
         binding.apply {
 
-
+            val dialogue =
+                SpotsDialog.Builder().setContext(this@MainActivity).setTheme(R.style.Custom)
+                    .setCancelable(true).build()
+            dialogue?.show()
             //setting trusted Contacts
             localDataBaseViewModel.readAllContacts.observe(
                 this@MainActivity,
                 { contacts ->
+                    dialogue?.dismiss()
+                    Log.d(TAG, "setViewValue: contacts $contacts")
 
                     if (contacts.isNotEmpty()) {
                         //setting user information
                         localDataBaseViewModel.realAllUserInfo.observe(
                             this@MainActivity,
                             { userInfo ->
-                                if (userInfo.isNotEmpty()) {
+                                if (userInfo != null) {
+                                    Log.d(TAG, "setViewValue: user $userInfo")
                                     mAdapter.setData(contacts)
 
-                                    if (userInfo[0].Image != null) {
+                                    if (userInfo.Image != null) {
                                         Glide.with(this@MainActivity)
                                             .asBitmap()
-                                            .load(userInfo[0].Image)
+                                            .load(userInfo.Image)
                                             .placeholder(R.drawable.ic_man)
                                             .into(navUserImage)
                                     }
-                                    navuserGmail.text = userInfo[0].User_Email
+                                    navuserGmail.text = userInfo.User_Email
 
                                 }
                             })
@@ -457,7 +474,7 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
             } else {
                 sim2Check.isChecked = false
                 sim1Check.isChecked = false
-                Log.d(TAG, "selectSIMDialog: No Data")
+                //Log.d(TAG, "selectSIMDialog: No Data")
             }
 
             sim1Check.setOnClickListener {
@@ -522,7 +539,7 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
 
         binding.apply {
             trailProgress.max = 100
-            ObjectAnimator.ofInt(trailProgress, "Progress", 15 * (7 - Integer.parseInt(remain)))
+            ObjectAnimator.ofInt(trailProgress, "Progress", 4 * (30 - Integer.parseInt(remain)))
                 .setDuration(2000)
                 .start()
             remainingDays.text = (Integer.parseInt(remain)).toString()
@@ -531,13 +548,43 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
 
     }
 
+
+
+
+    ////////////////////////////////////////////////Services Section \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
     private fun serviceStart() {
-        //Toast.makeText(this, "Service Started", Toast.LENGTH_SHORT).show()
-        startService(Intent(this, MotionDetectService::class.java).apply {
-            this.action = ACTION_START_SERVICE
-        })
-        Log.d(TAG, "serviceStart: Started Services")
+        trailCalculation2()
     }
+
+    private fun checkTrialValue(remain: Int) {
+        if (remain == 0) {
+            Toast.makeText(this, "Your Package is Over", Toast.LENGTH_LONG).show()
+            navigateToFramentIfNeeded()
+        } else {
+            startService(Intent(this, MotionDetectService::class.java).apply {
+                this.action = ACTION_START_SERVICE
+            })
+        }
+    }
+
+    private fun trailCalculation2() {
+
+        localDataBaseViewModel.realAllUserInfo.observe(this,{
+            startDateValue2 = simpleDateFormat.parse(simpleDateFormat.format(calendar.time))
+            endDateValue2 = simpleDateFormat.parse(it.Deactivate_Time)
+            val remain = (TimeUnit.DAYS.convert(
+                (endDateValue.time - startDateValue.time),
+                TimeUnit.MILLISECONDS
+            )).toString()
+            Log.d(TAG, "initViewModel: Time: " + Integer.parseInt(remain))
+
+            checkTrialValue(Integer.parseInt(remain))
+        })
+
+
+    }
+
+
 
     private fun setObservers() {
         MotionDetectService.uiChange.observe(this, {
@@ -611,11 +658,15 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
     }
 
 
-    //
-//------------------------------------------------------------------------permission sector ------------------------------------------------------------
+    /////////////////////////////End of services Section\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+
+
+    //------------------------------------------------------------------------permission sector ------------------------------------------------------------
+
+
     private fun checkGPS() {
         callFlag = true
-        Log.d(TAG, "requestPermission: First Permission wall")
+        //  Log.d(TAG, "requestPermission: First Permission wall")
         mSettingClient?.checkLocationSettings(mLocationSettingRequest)?.addOnSuccessListener {
         }?.addOnFailureListener { ex ->
             if ((ex as ApiException).statusCode == LocationSettingsStatusCodes.RESOLUTION_REQUIRED) {
@@ -624,7 +675,7 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
                     val resolvableApiException = ex as ResolvableApiException
                     resolvableApiException.startResolutionForResult(this, GPS_PERMISSION_CODE)
                 } catch (e: Exception) {
-                    Log.d(TAG, "requestPermission: exception $e")
+                    //          Log.d(TAG, "requestPermission: exception $e")
                 }
             } else {
                 if ((ex as ApiException).statusCode == LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE) {
@@ -640,30 +691,60 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
 
     }
 
+
     private fun requestPermission() {
         if (Permission.hasLocationPermissions(this)) {
 
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
-                !Settings.canDrawOverlays(this)
-            ) {
+            if (!Settings.canDrawOverlays(this)) {
                 userDialog()
                 Log.d(TAG, "onPermissionsGranted: dialog")
 
             } else {
                 if (mLocationManager?.isProviderEnabled(LocationManager.GPS_PROVIDER) == true) {
-                    if (!sosActivityState) {
-                        serviceStart()
-                        appsState = true
-                    }
-                } else {
-                    Log.d(TAG, "requestPermission: First Permission wall")
-                    mSettingClient?.checkLocationSettings(mLocationSettingRequest)
-                        ?.addOnSuccessListener {
-                            Log.d(TAG, "requestPermission: GPS already Enable")
+                    if (canBackgroundStart(this)) {
+                        if (devicesName == "samsung") {
                             if (!sosActivityState) {
                                 serviceStart()
                                 appsState = true
+                            }
+                        } else {
+                            soundCheckDialog()
+                            if (!sosActivityState) {
+                                serviceStart()
+                                appsState = true
+                            }
+                        }
+
+
+                    } else {
+
+                        extraDialog(Build.MANUFACTURER)
+
+
+                    }
+
+                } else {
+                    //           Log.d(TAG, "requestPermission: First Permission wall")
+                    mSettingClient?.checkLocationSettings(mLocationSettingRequest)
+                        ?.addOnSuccessListener {
+                            //             Log.d(TAG, "requestPermission: GPS already Enable")
+                            if (canBackgroundStart(this)) {
+
+                                if (devicesName == "samsung") {
+                                    if (!sosActivityState) {
+                                        serviceStart()
+                                        appsState = true
+                                    }
+                                } else {
+                                    soundCheckDialog()
+                                    if (!sosActivityState) {
+                                        serviceStart()
+                                        appsState = true
+                                    }
+                                }
+
+                            } else {
+                                extraDialog(Build.MANUFACTURER)
                             }
                         }?.addOnFailureListener { ex ->
                             if ((ex as ApiException).statusCode == LocationSettingsStatusCodes.RESOLUTION_REQUIRED) {
@@ -675,7 +756,7 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
                                         GPS_PERMISSION_CODE
                                     )
                                 } catch (e: Exception) {
-                                    Log.d(TAG, "requestPermission: exception $e")
+                                    //                     Log.d(TAG, "requestPermission: exception $e")
                                 }
                             } else {
                                 if ((ex as ApiException).statusCode == LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE) {
@@ -703,6 +784,9 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
                 Manifest.permission.SEND_SMS,
                 Manifest.permission.ACCESS_COARSE_LOCATION,
                 Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.RECORD_AUDIO,
+                Manifest.permission.READ_EXTERNAL_STORAGE,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE
             )
         } else {
             EasyPermissions.requestPermissions(
@@ -716,10 +800,107 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
                 Manifest.permission.ACCESS_COARSE_LOCATION,
                 Manifest.permission.ACCESS_FINE_LOCATION,
                 Manifest.permission.FOREGROUND_SERVICE,
+                Manifest.permission.RECORD_AUDIO,
+                Manifest.permission.READ_EXTERNAL_STORAGE,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE,
                 Manifest.permission.ACCESS_BACKGROUND_LOCATION
             )
         }
 
+
+    }
+
+    private fun extraDialog(manufacture: String) {
+
+        val dialog = Dialog(this)
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
+        dialog.setCancelable(false)
+        dialog.setContentView(R.layout.request_permission_background)
+        dialog.window?.setBackgroundDrawable(ColorDrawable(Color.WHITE))
+        val cancel = dialog.findViewById<Button>(R.id.permissionCancel)
+        val ok = dialog.findViewById<Button>(R.id.permissionOk)
+
+        ok.setOnClickListener {
+            // backGroundAppsRequest()
+            when (manufacture) {
+                "Huawei" -> {
+                    ManufactureDevicesList.Huawei(this)
+                }
+                "Meizu" -> {
+                    ManufactureDevicesList.Meizu(this)
+                }
+                "Sony" -> {
+                    ManufactureDevicesList.Sony(this)
+                }
+                "OPPO" -> {
+                    ManufactureDevicesList.OPPO(this)
+                }
+                "vivo" -> {
+                    ManufactureDevicesList.Vivo(this)
+                }
+                "LENOVO" -> {
+                    ManufactureDevicesList.Lenovo(this)
+                }
+                "Xiaomi" -> {
+                    ManufactureDevicesList.Xiaomi(this)
+                }
+            }
+
+            dialog.dismiss()
+        }
+        cancel.setOnClickListener {
+            Toast.makeText(
+                this,
+                "This Application won't Work properly Background permission Permission",
+                Toast.LENGTH_SHORT
+            ).show()
+
+            Handler(Looper.getMainLooper()).postDelayed({
+                startService(
+                    Intent(
+                        this@MainActivity,
+                        MotionDetectService::class.java
+                    ).apply {
+                        this.action = ACTION_STOP_SERVICE
+                    })
+                finishAndRemoveTask()
+
+            }, 2000)
+
+            dialog.dismiss()
+        }
+        dialog.show()
+
+    }
+
+    private fun soundCheckDialog() {
+        val dialog = Dialog(this)
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
+        dialog.setCancelable(false)
+        dialog.setContentView(R.layout.sound_permission_layout)
+        dialog.window?.setBackgroundDrawable(ColorDrawable(Color.WHITE))
+        val cancel = dialog.findViewById<Button>(R.id.SpermissionCancel)
+        val ok = dialog.findViewById<Button>(R.id.SpermissionOk)
+
+        ok.setOnClickListener {
+            allowNotificationSound()
+            dialog.dismiss()
+        }
+        cancel.setOnClickListener {
+
+            Snackbar.make(
+                findViewById(R.id.drawerlayout),
+                "The Sound feature of notification will not work properly! ",
+                Snackbar.LENGTH_LONG
+            ).apply {
+
+                animationMode = BaseTransientBottomBar.ANIMATION_MODE_SLIDE
+                setBackgroundTint(Color.RED)
+            }.show()
+
+            dialog.dismiss()
+        }
+        dialog.show()
 
     }
 
@@ -755,8 +936,16 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
         dialog.show()
     }
 
+    private fun allowNotificationSound() {
+        val settingsIntent: Intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            .putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
+        startActivity(settingsIntent)
+    }
+
+
     private fun screenOverLapRequest() {
-        Log.d(TAG, "screenOverLapRequest: is called")
+        //    Log.d(TAG, "screenOverLapRequest: is called")
         startActivity(
             Intent(
                 Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
@@ -779,22 +968,53 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
             !Settings.canDrawOverlays(this)
         ) {
             userDialog()
-            Log.d(TAG, "onPermissionsGranted: dialog")
+            //       Log.d(TAG, "onPermissionsGranted: dialog")
 
         } else {
             if (mLocationManager?.isProviderEnabled(LocationManager.GPS_PROVIDER) == true) {
-                if (!sosActivityState) {
-                    serviceStart()
-                    appsState = true
-                }
-            } else {
-                Log.d(TAG, "onPermissionsGranted: second wall")
-                mSettingClient?.checkLocationSettings(mLocationSettingRequest)
-                    ?.addOnSuccessListener {
-                        Log.d(TAG, "requestPermission: GPS already Enable")
+                if (canBackgroundStart(this)) {
+                    if (devicesName == "samsung") {
                         if (!sosActivityState) {
                             serviceStart()
                             appsState = true
+                        }
+                    } else {
+                        soundCheckDialog()
+                        if (!sosActivityState) {
+                            serviceStart()
+                            appsState = true
+                        }
+                    }
+
+                } else {
+
+                    extraDialog(Build.MANUFACTURER)
+
+
+                }
+            } else {
+                //           Log.d(TAG, "onPermissionsGranted: second wall")
+                mSettingClient?.checkLocationSettings(mLocationSettingRequest)
+                    ?.addOnSuccessListener {
+                        //                 Log.d(TAG, "requestPermission: GPS already Enable")
+                        if (canBackgroundStart(this)) {
+                            if (devicesName == "samsung") {
+                                if (!sosActivityState) {
+                                    serviceStart()
+                                    appsState = true
+                                }
+                            } else {
+                                soundCheckDialog()
+                                if (!sosActivityState) {
+                                    serviceStart()
+                                    appsState = true
+                                }
+                            }
+
+                        } else {
+
+                            extraDialog(Build.MANUFACTURER)
+
                         }
                     }?.addOnFailureListener { ex ->
                         if ((ex as ApiException).statusCode == LocationSettingsStatusCodes.RESOLUTION_REQUIRED) {
@@ -806,7 +1026,7 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
                                     GPS_PERMISSION_CODE
                                 )
                             } catch (e: Exception) {
-                                Log.d(TAG, "requestPermission: exception $e")
+                                //                       Log.d(TAG, "requestPermission: exception $e")
                             }
                         } else {
                             if ((ex as ApiException).statusCode == LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE) {
@@ -833,6 +1053,7 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
         EasyPermissions.onRequestPermissionsResult(requestCode, permissions, grantResults, this)
     }
 
+
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (resultCode == Activity.RESULT_OK) {
@@ -853,38 +1074,39 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
 
     override fun onResume() {
         super.onResume()
-        Log.d(TAG, "onResume: is called")
+        //      Log.d(TAG, "onResume: is called")
 
-        internetDisposable = ReactiveNetwork.observeInternetConnectivity()
-            .subscribeOn(Schedulers.io())
-            .observeOn(AndroidSchedulers.mainThread())
-            .subscribe { isConnectedToInternet ->
-                isInternetConnected = isConnectedToInternet
-            }
+//        internetDisposable = ReactiveNetwork.observeInternetConnectivity()
+//            .subscribeOn(Schedulers.io())
+//            .observeOn(AndroidSchedulers.mainThread())
+//            .subscribe { isConnectedToInternet ->
+//                isInternetConnected = isConnectedToInternet
+//            }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
-            Settings.canDrawOverlays(this)
-        ) {
+
+    }
+
+    override fun onPostResume() {
+        if (Settings.canDrawOverlays(this)) {
             if (!appsState) {
                 requestPermission()
             }
 
         }
-
-        Log.d(TAG, "onPostResume: is called")
+        super.onPostResume()
     }
 
-    override fun onPause() {
-        super.onPause()
-        safelyDispose(internetDisposable)
-
-    }
-
-    private fun safelyDispose(disposable: Disposable?) {
-        if (disposable != null && !disposable.isDisposed) {
-            disposable.dispose()
-        }
-    }
+    //    override fun onPause() {
+//        super.onPause()
+//        safelyDispose(internetDisposable)
+//
+//    }
+//
+//    private fun safelyDispose(disposable: Disposable?) {
+//        if (disposable != null && !disposable.isDisposed) {
+//            disposable.dispose()
+//        }
+//    }
 
     //--------NetWork-----------------//
 
@@ -892,11 +1114,152 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
     override fun onBackPressed() {
         binding.apply {
             bottomSheet.visibility = View.VISIBLE
-
         }
         super.onBackPressed()
     }
 
+    fun canBackgroundStart(context: Context): Boolean {
+        Log.d(TAG, "canBackgroundStart: is called")
+        val ops = context.getSystemService(APP_OPS_SERVICE) as AppOpsManager
+        try {
+            val op = 10021 // >= 23
+            // ops.checkOpNoThrow(op, uid, packageName)
+            val method: Method = ops.javaClass.getMethod(
+                "checkOpNoThrow", *arrayOf<Class<*>?>(
+                    Int::class.javaPrimitiveType,
+                    Int::class.javaPrimitiveType,
+                    String::class.java
+                )
+            )
+            val result = method.invoke(ops, op, Process.myUid(), context.packageName) as Int
+            return result == AppOpsManager.MODE_ALLOWED
+        } catch (e: Exception) {
+            Log.e(TAG, "not support", e)
+            return true
+        }
+        return false
+    }
 
+//    private fun isNotificationEnabled(mContext: Context): Boolean {
+//        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+//            val mAppOps = mContext.getSystemService(APP_OPS_SERVICE) as AppOpsManager
+//            val appInfo = mContext.applicationInfo
+//            val pkg = mContext.applicationContext.packageName
+//            val uid = appInfo.uid
+//            val appOpsClass: Class<*>
+//            try {
+//                appOpsClass = Class.forName(AppOpsManager::class.java.name)
+//                val checkOpNoThrowMethod = appOpsClass.getMethod(
+//                    CHECK_OP_NO_THROW, Integer.TYPE, Integer.TYPE,
+//                    String::class.java
+//                )
+//                val opPostNotificationValue = appOpsClass.getDeclaredField(OP_POST_NOTIFICATION)
+//                val value = opPostNotificationValue[Int::class.java] as Int
+//                return checkOpNoThrowMethod.invoke(
+//                    mAppOps, value, uid,
+//                    pkg
+//                ) as Int == AppOpsManager.MODE_ALLOWED
+//            } catch (ex: ClassNotFoundException) {
+//            } catch (ex: NoSuchMethodException) {
+//            } catch (ex: NoSuchFieldException) {
+//            } catch (ex: InvocationTargetException) {
+//            } catch (ex: IllegalAccessException) {
+//            }
+//            false
+//        } else {
+//            false
+//        }
+//    }
+//
+//
+//    private fun isNotificationEnabled2(context: Context): Boolean {
+//        Log.d(TAG, "isNotificationEnabled2: is called")
+//        Log.d(
+//            TAG,
+//            "isNotificationEnabled2: ${
+//                notificationManager.getNotificationChannel(CHANNEL_ID).sound
+//            }"
+//        )
+//
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+//            //8.0 mobile phones and above
+//            if ((context.getSystemService(NOTIFICATION_SERVICE) as NotificationManager).importance == NotificationManager.IMPORTANCE_NONE) {
+//                return false
+//            }
+//        }
+//        //Notification status bar permission
+//        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+//            Log.d(TAG, "isNotificationEnabled2: in kitkat")
+//            val mAppOps = context.getSystemService(APP_OPS_SERVICE) as AppOpsManager
+//            val appInfo = context.applicationInfo
+//            val pkg = context.applicationContext.packageName
+//            val uid = appInfo.uid
+//            val appOpsClass: Class<*>
+//            try {
+//                Log.d(TAG, "isNotificationEnabled2: try block")
+//                appOpsClass = Class.forName(AppOpsManager::class.java.name)
+//                val checkOpNoThrowMethod = appOpsClass.getMethod(
+//                    CHECK_OP_NO_THROW, Integer.TYPE, Integer.TYPE,
+//                    String::class.java
+//                )
+//                val opPostNotificationValue = appOpsClass.getDeclaredField(OP_POST_NOTIFICATION)
+//                val value = opPostNotificationValue[Int::class.java] as Int
+//                return checkOpNoThrowMethod.invoke(
+//                    mAppOps, value, uid,
+//                    pkg
+//                ) as Int == AppOpsManager.MODE_ALLOWED
+//            } catch (ex: ClassNotFoundException) {
+//            } catch (ex: NoSuchMethodException) {
+//            } catch (ex: NoSuchFieldException) {
+//            } catch (ex: InvocationTargetException) {
+//            } catch (ex: IllegalAccessException) {
+//            }
+//            false
+//        } else {
+//            false
+//        }
+//
+//
+////        val mAppOps = context.getSystemService(APP_OPS_SERVICE) as AppOpsManager
+////        val appInfo = context.applicationInfo
+////        val pkg = context.applicationContext.packageName
+////        val uid = appInfo.uid
+////
+////        var appOpsClass: Class<*>? = null
+////
+////        try {
+////            appOpsClass = Class.forName(AppOpsManager::class.java.name)
+////            val checkOpNoThrowMethod = appOpsClass.getMethod(
+////                CHECK_OP_NO_THROW, Integer.TYPE, Integer.TYPE,
+////                String::class.java
+////            )
+////            val opPostNotificationValue: Field = appOpsClass.getDeclaredField(OP_POST_NOTIFICATION)
+////
+////            val value = opPostNotificationValue[Int::class.java] as Int
+////            return checkOpNoThrowMethod.invoke(
+////                mAppOps,
+////                value,
+////                uid,
+////                pkg
+////            ) as Int == AppOpsManager.MODE_ALLOWED
+////
+////        } catch (e:Exception){
+////
+////        }
+////        return false
+//
+//
+//    }
+
+//    override fun dispatchKeyEvent(event: KeyEvent?): Boolean {
+//
+//        if(event?.keyCode == KeyEvent.KEYCODE_VOLUME_UP){
+//            Log.d(TAG, "dispatchKeyEvent: is pressed")
+//        }
+//        return super.dispatchKeyEvent(event)
+//    }
 }
+
+
+
 

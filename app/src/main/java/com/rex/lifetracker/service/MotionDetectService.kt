@@ -9,13 +9,19 @@ import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.location.Location
+import android.media.AudioManager
 import android.media.RingtoneManager
 import android.net.Uri
+import android.os.Handler
 import android.os.Looper
+import android.support.v4.media.session.MediaSessionCompat
+import android.support.v4.media.session.PlaybackStateCompat
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+
 import androidx.lifecycle.*
+import androidx.media.VolumeProviderCompat
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
@@ -26,7 +32,7 @@ import com.rex.lifetracker.R
 import com.rex.lifetracker.service.broadcast_receiver.SystemShakeAlert_broadcastReceiver
 import com.rex.lifetracker.utils.Constant.ACTION_START_SERVICE
 import com.rex.lifetracker.utils.Constant.ACTION_STOP_SERVICE
-import com.rex.lifetracker.utils.Constant.ACTIVITY_REQUEST_CODE
+import com.rex.lifetracker.utils.Constant.ACTION_WOMEN_SAFETY_SERVICE
 import com.rex.lifetracker.utils.Constant.BROADCAST_REQUEST_CODE
 import com.rex.lifetracker.utils.Constant.CANCEL_ACTION
 import com.rex.lifetracker.utils.Constant.CHANNEL_ALERT2_SYSTEM_ID
@@ -37,12 +43,15 @@ import com.rex.lifetracker.utils.Constant.FOREGROUND_NOTIFICATION_ID
 import com.rex.lifetracker.utils.Constant.LOCATION_UPDATE_INTERVAL
 import com.rex.lifetracker.utils.Constant.MOTION_ALERT_SYSTEM_NOTIFICATION_ID
 import com.rex.lifetracker.utils.Constant.MOTION_ALERT_SYSTEM_NOTIFICATION_ID2
+import com.rex.lifetracker.utils.Constant.START_PHONE_SERVICES
 import com.rex.lifetracker.utils.Constant.STOP_SERVICE_ACTION
 import com.rex.lifetracker.utils.Constant.TAG
+import com.rex.lifetracker.utils.Constant.WOMEN_SAFETY_CHANNEL_ID
+import com.rex.lifetracker.utils.Constant.WOMEN_SAFETY_NOTIFICATION_ID
 import com.rex.lifetracker.utils.Permission
-import com.rex.lifetracker.view.SOS
 import kotlin.math.roundToInt
 import kotlin.math.sqrt
+
 
 typealias Polyline = MutableList<LatLng>
 typealias Polylines = MutableList<Polyline>
@@ -50,6 +59,9 @@ typealias Polylines = MutableList<Polyline>
 class MotionDetectService : LifecycleService(), SensorEventListener, LifecycleObserver {
     //detect apps forground and background state
     var wasInBackground = false
+
+    var mAudioManager: AudioManager? = null
+    var mHandler: Handler? = null
 
     //sensor ans notification
     private var sensorManager: SensorManager? = null
@@ -62,7 +74,7 @@ class MotionDetectService : LifecycleService(), SensorEventListener, LifecycleOb
     private var accelerationZ: Double = 0.0
 
     //accident threashold
-    private val threshold = 40
+    private val threshold = 50
 
     // Minimum acceleration needed to count as a shake movement
     private val MIN_SHAKE_ACCELERATION = 12
@@ -96,6 +108,12 @@ class MotionDetectService : LifecycleService(), SensorEventListener, LifecycleOb
     var isFirstRun = true
 
     lateinit var fusedLocationProviderClient: FusedLocationProviderClient
+//    private val mReceiver: BroadcastReceiver = VolumeButtonPressed()
+//
+//    private lateinit var mSettingsContentObserver:SettingsContentObserver
+
+    private var mediaSession: MediaSessionCompat? = null
+    private var volumePressed = 0
 
 
     companion object {
@@ -121,19 +139,72 @@ class MotionDetectService : LifecycleService(), SensorEventListener, LifecycleOb
         postInitialValues()
         fusedLocationProviderClient = FusedLocationProviderClient(this)
         isTracking.observe(this, Observer {
-          //  Log.d(TAG, "onCreate: value of tracking: $it")
+            //  Log.d(TAG, "onCreate: value of tracking: $it")
             updateLocationTracking(it)
         })
 
+        volumeButtonPressed()
+
+        //screen on off broad cast
+//        val filter = IntentFilter()
+//        filter.addAction("android.media.VOLUME_CHANGED_ACTION")
+//        registerReceiver(mReceiver, filter)
+
+//         mSettingsContentObserver = SettingsContentObserver(this, Handler(Looper.getMainLooper()))
+//        applicationContext.contentResolver.registerContentObserver(
+//            Settings.System.CONTENT_URI,
+//            true,
+//            mSettingsContentObserver
+//        )
+
+
     }
 
+    private fun volumeButtonPressed() {
+        mediaSession = MediaSessionCompat(this, "PlayerService")
+        mediaSession!!.setFlags(
+            MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS or
+                    MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS
+        )
+        mediaSession!!.setPlaybackState(
+            PlaybackStateCompat.Builder()
+                .setState(
+                    PlaybackStateCompat.STATE_PLAYING,
+                    0,
+                    0f
+                ) //you simulate a player which plays something.
+                .build()
+        )
+        val myVolumeProvider = object : VolumeProviderCompat(
+            VolumeProviderCompat.VOLUME_CONTROL_RELATIVE, /*max volume*/
+            100, /*initial volume level*/
+            50
+        ) {
+            @SuppressLint("InvalidWakeLockTag")
+            override fun onAdjustVolume(direction: Int) {
+                Log.e("ACTION", direction.toString())
+                Log.d(TAG, "onAdjustVolume: $direction")
+                Log.d(TAG, "onAdjustVolume: :count $volumePressed")
+                volumePressed++
+                if (volumePressed >= 4) {
+                    womenSafety()
+                    Log.e(TAG, "onAdjustVolume: Working")
+                }
+
+            }
+        }
+        mediaSession!!.setPlaybackToRemote(myVolumeProvider)
+        mediaSession!!.isActive = true
+    }
+
+    //-------------------google map lines-------------------------------//
     @SuppressLint("MissingPermission")
     private fun updateLocationTracking(isTracking: Boolean) {
-     //   Log.d(TAG, "updateLocationTracking: is called")
+        //   Log.d(TAG, "updateLocationTracking: is called")
         if (isTracking) {
-         //   Log.d(TAG, "updateLocationTracking: is in")
+            //   Log.d(TAG, "updateLocationTracking: is in")
             if (Permission.hasLocationPermissions(this)) {
-         //       Log.d(TAG, "updateLocationTracking: in 2")
+                //       Log.d(TAG, "updateLocationTracking: in 2")
                 val request = LocationRequest.create().apply {
                     interval = LOCATION_UPDATE_INTERVAL
                     fastestInterval = FASTEST_LOCATION_INTERVAL
@@ -150,11 +221,11 @@ class MotionDetectService : LifecycleService(), SensorEventListener, LifecycleOb
         }
     }
 
-    val locationCallback = object : LocationCallback() {
+    private val locationCallback = object : LocationCallback() {
         override fun onLocationResult(result: LocationResult?) {
             super.onLocationResult(result)
             if (isTracking.value!!) {
-           //     Log.d(TAG, "onLocationResult: is called")
+                //     Log.d(TAG, "onLocationResult: is called")
 
                 result?.locations?.let { locations ->
                     for (location in locations) {
@@ -187,69 +258,7 @@ class MotionDetectService : LifecycleService(), SensorEventListener, LifecycleOb
 
     //---------------------------------Google Map ------------------------//
 
-
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-
-        intent?.let {
-            when (it.action) {
-                ACTION_START_SERVICE -> {
-                    //timerEvent.postValue(UIChange.START)
-                    ForegroundStart()
-                    uiChange.postValue(UIChange.END)
-
-
-                    Log.d(TAG, "onStartCommand: Service is Started")
-                }
-                ACTION_STOP_SERVICE -> {
-                    uiChange.postValue(UIChange.END)
-                    sensorManager?.unregisterListener(this)
-                    isTracking.postValue(false)
-                    fusedLocationProviderClient.removeLocationUpdates(locationCallback)
-                    stopForeground(true)
-                    postInitialValues()
-                    stopSelf()
-                    Log.d(TAG, "onStartCommand: services is sttoped")
-                }
-
-                else -> {
-                    //do nothing
-                    Log.d(TAG, "onStartCommand: services is sttoped")
-                }
-            }
-        }
-
-
-
-        return super.onStartCommand(intent, flags, startId)
-    }
-
-    private fun ForegroundStart() {
-        sensorManager?.registerListener(this, sensor, SensorManager.SENSOR_DELAY_NORMAL)
-        addEmptyPolyline()
-        isTracking.postValue(true)
-
-
-        val stopService = PendingIntent.getBroadcast(
-            this,
-            BROADCAST_REQUEST_CODE,
-            Intent(this, SystemShakeAlert_broadcastReceiver::class.java).also {
-                it.action = STOP_SERVICE_ACTION
-            },
-            PendingIntent.FLAG_CANCEL_CURRENT
-        )
-
-
-        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("Life Tracker is Activated")
-            .setContentText("Drive Safe, Keep your eyes on the road")
-            .setSmallIcon(R.drawable.ic_baseline_directions_bike_24)
-            .addAction(R.color.RED, "Stop Life Tracking", stopService)
-            .setPriority(NotificationCompat.PRIORITY_MAX)
-            .setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION))
-            // .setContentIntent(pendingIntent)
-            .build()
-        startForeground(FOREGROUND_NOTIFICATION_ID, notification)
-    }
+    //-----------sensor--------------------------------------------//
 
     override fun onSensorChanged(event: SensorEvent?) {
 
@@ -372,19 +381,68 @@ class MotionDetectService : LifecycleService(), SensorEventListener, LifecycleOb
     private fun executeShakeAction() {
         // Toast.makeText(this, "Shake detected", Toast.LENGTH_SHORT).show()
 
-        Log.d(TAG, "executeShakeAction: working")
+        //   Log.d(TAG, "executeShakeAction: working")
 
         createAlertNotification()
         fusedLocationProviderClient.removeLocationUpdates(locationCallback)
         stopSelf()
     }
+    //--------------------sensor-------------------------//
 
 
-    private fun createAlertNotification() {
-        uiChange.postValue(UIChange.START)
-     //   postInitialValues()
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+//        val filter = IntentFilter()
+//        filter.addAction("android.media.VOLUME_CHANGED_ACTION")
+//        registerReceiver(mReceiver, filter)
+        intent?.let {
+            when (it.action) {
+                ACTION_START_SERVICE -> {
+                    //timerEvent.postValue(UIChange.START)
+                    ForeGroundStart()
+                    uiChange.postValue(UIChange.END)
+
+
+                    //   Log.d(TAG, "onStartCommand: Service is Started")
+                }
+                ACTION_STOP_SERVICE -> {
+                    uiChange.postValue(UIChange.END)
+                    sensorManager?.unregisterListener(this)
+                    isTracking.postValue(false)
+                    fusedLocationProviderClient.removeLocationUpdates(locationCallback)
+                    stopForeground(true)
+                    postInitialValues()
+                    stopSelf()
+                }
+                ACTION_WOMEN_SAFETY_SERVICE -> {
+                    //unregisterReceiver(mReceiver)
+                    //  womenSafety()
+                }
+
+                else -> {
+                    //do nothing
+                    //  Log.d(TAG, "onStartCommand: services is sttoped")
+                }
+            }
+        }
+
+
+
+        return super.onStartCommand(intent, flags, startId)
+    }
+
+    private fun womenSafety() {
         sensorManager?.unregisterListener(this)
-        Log.d(TAG, "createAlertNotification: is called")
+        fusedLocationProviderClient.removeLocationUpdates(locationCallback)
+        //
+        stopSelf()
+
+        val pendingIntentCancel2 = PendingIntent.getBroadcast(
+            this,
+            BROADCAST_REQUEST_CODE,
+            Intent(this, SystemShakeAlert_broadcastReceiver::class.java),
+            PendingIntent.FLAG_CANCEL_CURRENT
+        )
+
         val pendingIntentCancel = PendingIntent.getBroadcast(
             this,
             BROADCAST_REQUEST_CODE,
@@ -393,14 +451,92 @@ class MotionDetectService : LifecycleService(), SensorEventListener, LifecycleOb
             },
             PendingIntent.FLAG_CANCEL_CURRENT
         )
-
-
-        val pendingIntentSOS = PendingIntent.getActivity(
+        val pendingIntentCancel3 = PendingIntent.getBroadcast(
             this,
-            ACTIVITY_REQUEST_CODE,
-            Intent(this, SOS::class.java),
-            0
+            BROADCAST_REQUEST_CODE,
+            Intent(this, SystemShakeAlert_broadcastReceiver::class.java).also {
+                it.action = START_PHONE_SERVICES
+            },
+            PendingIntent.FLAG_CANCEL_CURRENT
+        )
 
+
+        val notification = NotificationCompat.Builder(this, WOMEN_SAFETY_CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_baseline_add_alert_24)
+            .setContentTitle("Danger Detected")
+            .setContentText("After 5 Second the service will make calls")
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setCategory(NotificationCompat.CATEGORY_CALL)
+            .addAction(R.color.RED, "Cancel", pendingIntentCancel)
+            .setDeleteIntent(pendingIntentCancel3)
+            .setWhen(System.currentTimeMillis())
+            .setUsesChronometer(true)
+            .setFullScreenIntent(pendingIntentCancel2, true)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setShowWhen(true)
+            .setTimeoutAfter(5000)
+            .build()
+        notification.flags = notification.flags or Notification.FLAG_NO_CLEAR
+        notification.flags = notification.flags or Notification.FLAG_ONGOING_EVENT
+        notificationManager.notify(WOMEN_SAFETY_NOTIFICATION_ID, notification)
+    }
+
+    private fun ForeGroundStart() {
+        sensorManager?.registerListener(this, sensor, SensorManager.SENSOR_DELAY_NORMAL)
+        addEmptyPolyline()
+        isTracking.postValue(true)
+
+
+        val stopService = PendingIntent.getBroadcast(
+            this,
+            BROADCAST_REQUEST_CODE,
+            Intent(this, SystemShakeAlert_broadcastReceiver::class.java).also {
+                it.action = STOP_SERVICE_ACTION
+            },
+            PendingIntent.FLAG_CANCEL_CURRENT
+        )
+
+
+        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
+            .setContentTitle("Life Tracker is Activated")
+            .setContentText("Drive Safe, Keep your eyes on the road")
+            .setSmallIcon(R.drawable.ic_baseline_directions_bike_24)
+            .addAction(R.color.RED, "Stop Life Tracking", stopService)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setPriority(NotificationCompat.PRIORITY_MAX)
+            .setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION))
+            // .setContentIntent(pendingIntent)
+            .build()
+        notification.visibility = Notification.VISIBILITY_PUBLIC
+        startForeground(FOREGROUND_NOTIFICATION_ID, notification)
+    }
+
+
+    private fun createAlertNotification() {
+        uiChange.postValue(UIChange.START)
+        sensorManager?.unregisterListener(this)
+
+        val pendingIntentCancel = PendingIntent.getBroadcast(
+            this,
+            BROADCAST_REQUEST_CODE,
+            Intent(this, SystemShakeAlert_broadcastReceiver::class.java).also {
+                it.action = CANCEL_ACTION
+            },
+            PendingIntent.FLAG_CANCEL_CURRENT
+        )
+        val pendingIntentCancel2 = PendingIntent.getBroadcast(
+            this,
+            BROADCAST_REQUEST_CODE,
+            Intent(this, SystemShakeAlert_broadcastReceiver::class.java),
+            PendingIntent.FLAG_CANCEL_CURRENT
+        )
+        val pendingIntentCancel3 = PendingIntent.getBroadcast(
+            this,
+            BROADCAST_REQUEST_CODE,
+            Intent(this, SystemShakeAlert_broadcastReceiver::class.java).also {
+                it.action = START_PHONE_SERVICES
+            },
+            PendingIntent.FLAG_CANCEL_CURRENT
         )
 
         if (!wasInBackground) {
@@ -409,26 +545,14 @@ class MotionDetectService : LifecycleService(), SensorEventListener, LifecycleOb
                 .setSmallIcon(R.drawable.ic_baseline_add_alert_24)
                 .setContentTitle("Motion Detected")
                 .setContentText("After 30 Second the service will make calls")
-                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                 //.setCategory(NotificationCompat.CATEGORY_PROGRESS)
                 .addAction(R.color.RED, "Cancel", pendingIntentCancel)
-                .setFullScreenIntent(pendingIntentCancel, true)
-                .setDeleteIntent(pendingIntentSOS)
+                .setFullScreenIntent(pendingIntentCancel2, true)
+                .setDeleteIntent(pendingIntentCancel3)
                 .setWhen(System.currentTimeMillis())
+                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                 .setUsesChronometer(true)
-                .setVibrate(
-                    longArrayOf(
-                        1000,
-                        1000,
-                        1000,
-                        1000,
-                        1000,
-                        1000,
-                        1000,
-                        1000
-                    )
-                )
-                .setShowWhen(true)
                 .setSound(
                     Uri.parse(
                         "android.resource://"
@@ -439,6 +563,8 @@ class MotionDetectService : LifecycleService(), SensorEventListener, LifecycleOb
                 .build()
             notification.flags = notification.flags or Notification.FLAG_INSISTENT
             notification.flags = notification.flags or Notification.FLAG_NO_CLEAR
+            notification.flags = notification.flags or Notification.FLAG_ONGOING_EVENT
+            notification.visibility = Notification.VISIBILITY_PUBLIC
             notificationManager.notify(MOTION_ALERT_SYSTEM_NOTIFICATION_ID, notification)
         } else {
             Log.d(TAG, "createAlertNotification: background No")
@@ -449,23 +575,11 @@ class MotionDetectService : LifecycleService(), SensorEventListener, LifecycleOb
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 //.setCategory(NotificationCompat.CATEGORY_PROGRESS)
                 .addAction(R.color.RED, "Cancel", pendingIntentCancel)
-                .setFullScreenIntent(pendingIntentCancel, true)
-                .setDeleteIntent(pendingIntentSOS)
+                .setFullScreenIntent(pendingIntentCancel2, true)
+                .setDeleteIntent(pendingIntentCancel3)
+                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                 .setWhen(System.currentTimeMillis())
                 .setUsesChronometer(true)
-                .setVibrate(
-                    longArrayOf(
-                        1000,
-                        1000,
-                        1000,
-                        1000,
-                        1000,
-                        1000,
-                        1000,
-                        1000
-                    )
-                )
-                .setShowWhen(true)
                 .setSound(
                     Uri.parse(
                         "android.resource://"
@@ -479,6 +593,8 @@ class MotionDetectService : LifecycleService(), SensorEventListener, LifecycleOb
             // notification.flags= Notification.FLAG_ONGOING_EVENT
             notification.flags = notification.flags or Notification.FLAG_INSISTENT
             notification.flags = notification.flags or Notification.FLAG_NO_CLEAR
+            notification.flags = notification.flags or Notification.FLAG_ONGOING_EVENT
+            notification.visibility = Notification.VISIBILITY_PUBLIC
             notificationManager.notify(MOTION_ALERT_SYSTEM_NOTIFICATION_ID2, notification)
         }
 
@@ -489,20 +605,21 @@ class MotionDetectService : LifecycleService(), SensorEventListener, LifecycleOb
     @OnLifecycleEvent(Lifecycle.Event.ON_START)
     fun onMoveToForeground() {
         // app moved to foreground
-        Log.d(TAG, "onMoveToForeground: in forground")
+        //  Log.d(TAG, "onMoveToForeground: in forground")
         wasInBackground = true
     }
 
     @OnLifecycleEvent(Lifecycle.Event.ON_STOP)
     fun onMoveToBackground() {
         // app moved to background
-        Log.d(TAG, "onMoveToBackground: in background")
+        // Log.d(TAG, "onMoveToBackground: in background")
         wasInBackground = false
     }
 
     override fun onDestroy() {
-
         sensorManager?.unregisterListener(this)
+        mediaSession!!.isActive = false
+        // applicationContext.contentResolver.unregisterContentObserver(mSettingsContentObserver)
         stopSelf()
         super.onDestroy()
 

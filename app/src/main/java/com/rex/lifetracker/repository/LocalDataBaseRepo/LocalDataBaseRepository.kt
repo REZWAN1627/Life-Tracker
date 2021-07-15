@@ -10,7 +10,7 @@ import com.rex.lifetracker.RoomDataBase.LocalDataBase_Entity.deleteContactsCache
 class LocalDataBaseRepository(private val localDataBaseDao: LocalDataBaseDao) {
 
     val readAllContacts: LiveData<List<SOSContacts_Entity>> = localDataBaseDao.readAllContacts()
-    val readAllUserInfo: LiveData<List<PersonalInfo_Entity>> = localDataBaseDao.readAllUserInfo()
+    val readAllUserInfo: LiveData<PersonalInfo_Entity> = localDataBaseDao.readAllUserInfo()
     val readAllSIMSlot: LiveData<List<SIM_Entity>> = localDataBaseDao.readAllSIMSlot()
     val readAllCache: LiveData<List<deleteContactsCacheModel>> = localDataBaseDao.readAllCache()
 
@@ -53,7 +53,7 @@ class LocalDataBaseRepository(private val localDataBaseDao: LocalDataBaseDao) {
 
     suspend fun nukeTable(){
         localDataBaseDao.nukeTableContacts()
-        localDataBaseDao.nukeTablePersonalInfo()
+      //  localDataBaseDao.nukeTablePersonalInfo()
         localDataBaseDao.nukeTableSim()
         localDataBaseDao.nukeTabledCache()
     }

@@ -88,7 +88,7 @@ class MapsFragment : Fragment(R.layout.fragment_maps) {
             //Create a new marker
             val markerOptions = MarkerOptions()
             markerOptions.position(latLng)
-            markerOptions.icon( bitmapDescriptorFromVector(requireContext(),R.drawable.ic_baseline_directions_bike_245))
+            markerOptions.icon( bitmapDescriptorFromVector(requireContext(),R.drawable.bikelogomap))
             markerOptions.rotation(location.getBearing())
             markerOptions.anchor(0.5.toFloat(), 0.5.toFloat())
             userLocationMarker = map?.addMarker(markerOptions)

@@ -29,7 +29,7 @@
                 android:layout_height="wrap_content">
 
                 <TextView
-                    android:id="@+id/pla1"
+                    android:id="@+id/oneMonth"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="30 Days Plan"
@@ -44,29 +44,34 @@
                     android:orientation="horizontal">
 
                     <ImageView
+                        android:id="@+id/start1"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:src="@drawable/ic_baseline_star_24" />
 
                     <ImageView
+                        android:id="@+id/start2"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:src="@drawable/ic_baseline_star_24" />
 
                     <ImageView
+                        android:id="@+id/start3"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:src="@drawable/ic_baseline_star_24" />
 
                     <ImageView
+                        android:id="@+id/start4"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:src="@drawable/ic_baseline_star_24" />
+                        android:src="@drawable/ic_baseline_star_245" />
 
                     <ImageView
+                        android:id="@+id/start5"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:src="@drawable/ic_baseline_star_24" />
+                        android:src="@drawable/ic_baseline_star_245" />
 
                 </LinearLayout>
 
@@ -78,7 +83,7 @@
                 android:layout_height="@dimen/_5sdp" />
 
             <TextView
-                android:id="@+id/planCost1"
+                android:id="@+id/oneMonthCost"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="$100"
@@ -112,7 +117,7 @@
                 android:layout_height="wrap_content">
 
                 <TextView
-                    android:id="@+id/pla2"
+                    android:id="@+id/sixMonthDays"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="30 Days Plan"
@@ -127,29 +132,34 @@
                     android:orientation="horizontal">
 
                     <ImageView
+                        android:id="@+id/start2.1"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:src="@drawable/ic_baseline_star_24" />
 
                     <ImageView
+                        android:id="@+id/start2.2"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:src="@drawable/ic_baseline_star_24" />
 
                     <ImageView
+                        android:id="@+id/start2.3"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:src="@drawable/ic_baseline_star_24" />
 
                     <ImageView
+                        android:id="@+id/start2.4"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:src="@drawable/ic_baseline_star_24" />
 
                     <ImageView
+                        android:id="@+id/start2.5"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:src="@drawable/ic_baseline_star_24" />
+                        android:src="@drawable/ic_baseline_star_245" />
 
                 </LinearLayout>
 
@@ -161,7 +171,7 @@
                 android:layout_height="@dimen/_5sdp" />
 
             <TextView
-                android:id="@+id/planCost2"
+                android:id="@+id/sixMonthPlanCost"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="$100"
@@ -195,7 +205,7 @@
                 android:layout_height="wrap_content">
 
                 <TextView
-                    android:id="@+id/pla3"
+                    android:id="@+id/twelveMonthPlan"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="30 Days Plan"
@@ -210,26 +220,31 @@
                     android:orientation="horizontal">
 
                     <ImageView
+                        android:id="@+id/start3.1"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:src="@drawable/ic_baseline_star_24" />
 
                     <ImageView
+                        android:id="@+id/start3.2"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:src="@drawable/ic_baseline_star_24" />
 
                     <ImageView
+                        android:id="@+id/start3.3"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:src="@drawable/ic_baseline_star_24" />
 
                     <ImageView
+                        android:id="@+id/start3.4"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:src="@drawable/ic_baseline_star_24" />
 
                     <ImageView
+                        android:id="@+id/start3.5"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:src="@drawable/ic_baseline_star_24" />
@@ -244,7 +259,7 @@
                 android:layout_height="@dimen/_5sdp" />
 
             <TextView
-                android:id="@+id/planCost3"
+                android:id="@+id/twelveMonthPlanCost"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="$100"
@@ -259,84 +274,6 @@
         android:layout_width="0dp"
         android:layout_height="@dimen/_10sdp" />
 
-    <RelativeLayout
-        android:layout_width="@dimen/_270sdp"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:background="@drawable/shape_colorgradient_all_activities"
-        android:padding="@dimen/_10sdp">
-
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:paddingLeft="@dimen/_10sdp"
-            android:paddingRight="@dimen/_10sdp">
-
-            <RelativeLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content">
-
-                <TextView
-                    android:id="@+id/pla4"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="30 Days Plan"
-                    android:textColor="@color/white"
-                    android:textSize="@dimen/_16ssp"
-                    android:textStyle="bold" />
-
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_alignParentRight="true"
-                    android:orientation="horizontal">
-
-                    <ImageView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:src="@drawable/ic_baseline_star_24" />
-
-                    <ImageView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:src="@drawable/ic_baseline_star_24" />
-
-                    <ImageView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:src="@drawable/ic_baseline_star_24" />
-
-                    <ImageView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:src="@drawable/ic_baseline_star_24" />
-
-                    <ImageView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:src="@drawable/ic_baseline_star_24" />
-
-                </LinearLayout>
-
-
-            </RelativeLayout>
-
-            <Space
-                android:layout_width="0dp"
-                android:layout_height="@dimen/_5sdp" />
-
-            <TextView
-                android:id="@+id/planCost4"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="$100"
-                android:textColor="@color/money"
-                android:textSize="@dimen/_16ssp"
-                android:textStyle="bold" />
-        </LinearLayout>
-
-    </RelativeLayout>
 
 
 </LinearLayout>

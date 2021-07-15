@@ -16,6 +16,7 @@ import coil.ImageLoader
 import coil.request.ImageRequest
 import coil.request.SuccessResult
 import com.bumptech.glide.Glide
+import com.github.pwittchen.reactivenetwork.library.rx2.ReactiveNetwork
 import com.google.firebase.auth.FirebaseAuth
 import com.rex.lifetracker.R
 import com.rex.lifetracker.RoomDataBase.LocalDataBase_Entity.PersonalInfo_Entity
@@ -27,7 +28,11 @@ import com.rex.lifetracker.viewModel.LocalDataBaseVM.LocalDataBaseViewModel
 import com.rex.lifetracker.viewModel.firebaseViewModel.SignInViewModel
 import com.rex.lifetracker.viewModel.firebaseViewModel.UserInfoViewModel
 import dmax.dialog.SpotsDialog
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.Disposable
+import io.reactivex.schedulers.Schedulers
 import kotlinx.coroutines.*
+import java.io.ByteArrayOutputStream
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -36,14 +41,19 @@ class UserInfo : AppCompatActivity() {
     private lateinit var binding: ActivityUserInfoBinding
     private lateinit var signInViewModel: SignInViewModel
     private lateinit var userInfoViewModel: UserInfoViewModel
-    private lateinit var After7DaysDate: String
-    private lateinit var currentDate: String
+    private  var After7DaysDate: String? = null
+    private  var currentDate: String? = null
+    private  var currentDate2: String? = null
     private val calendar = Calendar.getInstance()
     private val simpleDateFormat = SimpleDateFormat("dd.MM.yyyy")
-    private val firebaseAuth = FirebaseAuth.getInstance()
+    private val simpleDateFormat2 = SimpleDateFormat("EEE, d MMM -HH:mm")
     private lateinit var localDataBaseViewModel: LocalDataBaseViewModel
-    private var globalEmail = ""
+    private var globalEmail : String = "null"
     private var globalImage: String = "null"
+    private var subsPack: String = "Trail Version"
+    private var broughtPack : String = "null"
+    private var status: String = "On going"
+
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -88,7 +98,9 @@ class UserInfo : AppCompatActivity() {
     private fun formattingDate() {
 
         currentDate = simpleDateFormat.format(calendar.time)
-        calendar.add(Calendar.DATE, 7) // number of days to add
+        currentDate2 = simpleDateFormat2.format(calendar.time)
+        broughtPack = currentDate2 as String
+        calendar.add(Calendar.DATE, 30) // number of days to add
 
     }
 
@@ -96,145 +108,156 @@ class UserInfo : AppCompatActivity() {
         localDataBaseViewModel = ViewModelProvider(this).get(LocalDataBaseViewModel::class.java)
         Log.d(TAG, "initModel: is called")
         userInfoViewModel = ViewModelProvider(
-            this,
-            ViewModelProvider.AndroidViewModelFactory.getInstance(this.application)
+            this
         ).get(
             UserInfoViewModel::class.java
         )
         signInViewModel = ViewModelProvider(
-            this,
-            ViewModelProvider.AndroidViewModelFactory.getInstance(this.application)
+            this
         ).get(
             SignInViewModel::class.java
         )
-
-        signInViewModel.collectUserData()
-
 
     }
 
 
     private fun setInfo() {
 
+        Log.d(TAG, "setInfo: is called")
+
+
         val dialogue =
             SpotsDialog.Builder().setContext(this).setTheme(R.style.LoadingUserInfo)
                 .setCancelable(true).build()
         dialogue?.show()
 
-        signInViewModel.collectUserInfoLiveData?.observe(this, Observer { it ->
-
-            Log.d(TAG, "setInfo: is called " + it.email)
-            globalEmail = it.email
-            globalImage = it.imageUrl
-
-                Log.d(TAG, "setInfo: is called")
-                userInfoViewModel.getUserInfoLiveData?.observe(
-                    this@UserInfo,
-                    Observer { userInfo ->
+            signInViewModel.collectUserInfoLiveData.observe(this, {
+                globalEmail = it.email
+                userInfoViewModel.getUserInfoLiveData.observe(this,{user->
+                    if (user!=null){
+                        Log.d(TAG, "setInfo: all user info $user")
                         dialogue?.dismiss()
-
-                        Log.d(TAG, "setInfo: inside is called $userInfo")
-
-                        if (userInfo != null) {
-                            After7DaysDate = userInfo.deactivate_Time
+                        binding.apply {
+                            userFirstName.setText(user.first_Name)
+                            userLastName.setText(user.last_Name)
+                            globalImage = user.avatar_image
+                            subsPack = user.subscription_pack.toString()
+                            After7DaysDate = user.deactivate_Time
+                            broughtPack = user.brought_pack_time.toString()
+                            status = user.status.toString()
+                            currentDate = user.active_Time
                             binding.apply {
-
-                                if (userInfo.first_Name == "null"
-                                    && userInfo.last_Name == "null"
-                                    && userInfo.deactivate_Time == "null" && userInfo.active_Time == "null"
-                                ) {
-                                    After7DaysDate = simpleDateFormat.format(calendar.time)
-                                } else if (userInfo.first_Name == "null" ||
-                                    userInfo.last_Name == "null" ||
-                                    userInfo.deactivate_Time == "null" || userInfo.active_Time == "null"
-                                ) {
-                                    After7DaysDate = simpleDateFormat.format(calendar.time)
-
-                                } else {
-                                    userFirstName.setText(userInfo.first_Name)
-                                    userLastName.setText(userInfo.last_Name)
-                                    After7DaysDate = userInfo.deactivate_Time
-                                    currentDate = userInfo.active_Time
-                                }
+                                userGmail.text = it.email
+                                Glide.with(this@UserInfo).load(globalImage)
+                                    .centerCrop()
+                                    .placeholder(R.drawable.ic_team)
+                                    .into(UserImage)
 
                             }
-                        }else{
-                            After7DaysDate = simpleDateFormat.format(calendar.time)
+
                         }
+                    }else{
+                        dialogue?.dismiss()
+                        After7DaysDate = simpleDateFormat.format(calendar.time)
+                        globalImage = it.imageUrl
+                        globalEmail = it.email
+                        binding.apply {
+                            userGmail.text = it.email
+                            Glide.with(this@UserInfo).load(it.imageUrl)
+                                .centerCrop()
+                                .placeholder(R.drawable.ic_team)
+                                .into(UserImage)
+
+                        }
+                    }
+                })
+            })
 
 
-                    })
 
 
-
-            binding.apply {
-
-                userGmail.text = it.email
-                Glide.with(this@UserInfo).load(it.imageUrl)
-                    .centerCrop()
-                    .placeholder(R.drawable.ic_team)
-                    .into(UserImage)
-                //@tools:sample/avatars
-            }
-
-        })
     }
 
     private fun insertValue(
         firstName: String,
         lastName: String
     ) {
-
-        userInfoViewModel.insert(
-            UserInfoModel(
-                currentDate,After7DaysDate,firstName,lastName
-            )
-        )
-
-            if (globalImage != "null") {
-                lifecycleScope.launch {
-                    localDataBaseViewModel.addUserInfo(
-                        PersonalInfo_Entity(
-                            0,
-                            firstName,
-                            lastName,
-                            After7DaysDate,
-                            currentDate,
-                            globalEmail,
-                            getBitmap(globalImage)
-                        )
-                    )
-                }
-
-
-            } else {
-                localDataBaseViewModel.addUserInfo(
-                    PersonalInfo_Entity(
-                        0,
-                        firstName,
-                        lastName,
-                        After7DaysDate,
-                        currentDate,
-                        globalEmail,
-                        AppCompatResources.getDrawable(this@UserInfo, R.drawable.defaultimage)!!.toBitmap()
-                    )
-                )
-            }
+        Log.d(TAG, "insertValue: is called")
 
 
         val dialogue =
             SpotsDialog.Builder().setContext(this).setTheme(R.style.LoadingUserInfo)
                 .setCancelable(true).build()
         dialogue?.show()
-        userInfoViewModel.insertResultLiveData?.observe(this@UserInfo, Observer {
-            dialogue?.dismiss()
-            binding.apply {
-                userFirstName.setText("")
-                userLastName.setText("")
+            if (globalImage != "null") {
+                val job = CoroutineScope(Dispatchers.IO).launch {
+                    val result =
+                        localDataBaseUpload(getBitmap(globalImage), firstName, lastName)
+                    val result2 = FirebaseUpload(getByte(getBitmap(globalImage)), firstName, lastName)
+
+
+                }
+                job.invokeOnCompletion {
+                    dialogue?.dismiss()
+                    startActivity(Intent(this@UserInfo, TrustedNumberDetails::class.java))
+                    finish()
+                }
+
+            } else {
+                val job = CoroutineScope(Dispatchers.IO).launch {
+                    val result = FirebaseUpload(
+                        getByte(
+                            AppCompatResources.getDrawable(this@UserInfo, R.drawable.defaultimage)!!
+                                .toBitmap()
+                        ), firstName, lastName
+                    )
+                    val result2 = localDataBaseUpload(
+                        AppCompatResources.getDrawable(this@UserInfo, R.drawable.defaultimage)!!
+                            .toBitmap(), firstName, lastName
+                    )
+                }
+                job.invokeOnCompletion {
+                    dialogue?.dismiss()
+                    startActivity(Intent(this@UserInfo, TrustedNumberDetails::class.java))
+                    finish()
+                }
+
+
             }
-            startActivity(Intent(this@UserInfo, TrustedNumberDetails::class.java))
-            finish()
-        })
+
+
+
+
+
+    }
+
+    private fun FirebaseUpload(image: ByteArray, firstName: String, lastName: String) {
+        userInfoViewModel.insert(
+            UserInfoModel(
+                currentDate.toString(), "", broughtPack,
+                After7DaysDate.toString(), firstName, lastName, status, subsPack
+            ),
+            image
+        )
+
+    }
+
+    private fun localDataBaseUpload(bitmap: Bitmap, firstName: String, lastName: String) {
+        Log.d(TAG, "localDataBaseUpload: is caled")
+        localDataBaseViewModel.addUserInfo(
+            PersonalInfo_Entity(
+                0,
+                firstName,
+                lastName,
+                After7DaysDate!!,
+                currentDate!!,
+                subsPack,
+                broughtPack,
+                status,
+                globalEmail,
+                bitmap
+            )
+        )
 
     }
 
@@ -247,6 +270,16 @@ class UserInfo : AppCompatActivity() {
         val result = (loading.execute(request) as SuccessResult).drawable
         return (result as BitmapDrawable).bitmap
     }
+
+    private fun getByte(image: Bitmap): ByteArray {
+        Log.d(TAG, "getByte: is called")
+        val baos = ByteArrayOutputStream()
+        val bitmap = image
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos)
+        return baos.toByteArray()
+
+    }
+
 
 
 }
