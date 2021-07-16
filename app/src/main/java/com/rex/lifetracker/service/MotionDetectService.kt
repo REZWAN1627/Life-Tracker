@@ -464,7 +464,7 @@ class MotionDetectService : LifecycleService(), SensorEventListener, LifecycleOb
         val notification = NotificationCompat.Builder(this, WOMEN_SAFETY_CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_baseline_add_alert_24)
             .setContentTitle("Danger Detected")
-            .setContentText("After 5 Second the service will make calls")
+            .setContentText("After 10 Second the service will make calls")
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(NotificationCompat.CATEGORY_CALL)
             .addAction(R.color.RED, "Cancel", pendingIntentCancel)
@@ -474,7 +474,7 @@ class MotionDetectService : LifecycleService(), SensorEventListener, LifecycleOb
             .setFullScreenIntent(pendingIntentCancel2, true)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setShowWhen(true)
-            .setTimeoutAfter(5000)
+            .setTimeoutAfter(10000)
             .build()
         notification.flags = notification.flags or Notification.FLAG_NO_CLEAR
         notification.flags = notification.flags or Notification.FLAG_ONGOING_EVENT

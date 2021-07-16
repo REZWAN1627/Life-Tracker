@@ -1113,7 +1113,8 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
 
     override fun onBackPressed() {
         binding.apply {
-            bottomSheet.visibility = View.VISIBLE
+            BottomSheetBehavior.from(bottomSheet).state =
+                BottomSheetBehavior.STATE_COLLAPSED
         }
         super.onBackPressed()
     }

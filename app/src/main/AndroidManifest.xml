@@ -25,11 +25,9 @@
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
 
-
     <uses-feature
         android:name="android.hardware.sensor.accelerometer"
         android:required="true" />
-
 
     <application
         android:name=".NotificationChannel.Notification"
@@ -40,6 +38,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.LifeTracker"
         android:usesCleartextTraffic="true">
+        <activity android:name=".OfflineMaps.OfflineMaps"></activity>
         <activity android:name=".view.ManageTrustedContactsList" />
         <activity android:name=".view.userUi.EditProfile" />
         <!--
@@ -82,10 +81,10 @@
             android:exported="false">
             <intent-filter>
                 <action android:name="android.location.PROVIDERS_CHANGED" />
+
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </receiver>
-
 
         <activity
             android:name="com.theartofdev.edmodo.cropper.CropImageActivity"
