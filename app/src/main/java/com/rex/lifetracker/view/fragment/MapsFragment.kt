@@ -58,7 +58,9 @@ class MapsFragment : Fragment(R.layout.fragment_maps) {
 
             mapView.getMapAsync {
                 map = it
-
+//                if (map!=null){
+//                    map?.isMyLocationEnabled = true
+//                }
                 addAllPolylines()
             }
         }

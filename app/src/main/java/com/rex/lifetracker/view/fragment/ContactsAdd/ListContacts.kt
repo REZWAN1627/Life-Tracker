@@ -358,12 +358,13 @@ class ListContacts : Fragment(R.layout.fragment_list_contacts) {
             .subscribe { isConnectedToInternet ->
                 isInternetConnected = isConnectedToInternet
                 if (isConnectedToInternet) {
-                    localDataBaseViewModel.readAllContacts?.observe(viewLifecycleOwner, Observer {
+                    localDataBaseViewModel.readAllContacts?.observe(viewLifecycleOwner, {
                         if (it.isEmpty()) {
                             trustedContactsViewModel.getContactsLiveData?.observe(
                                 viewLifecycleOwner,
-                                Observer { onlineList ->
+                                { onlineList ->
                                     Log.d(TAG, "onViewCreated online : ${onlineList.size}")
+                                   // Log.d(TAG, "onResume: :${onlineList[0].Image}")
                                     if (onlineList.isNotEmpty()) {
                                         totalsizeOnline = onlineList.size
 
@@ -374,26 +375,15 @@ class ListContacts : Fragment(R.layout.fragment_list_contacts) {
                                                     .setCancelable(true).build()
                                             dialogue?.show()
                                             for ((i, model) in onlineList.withIndex()) {
-                                                if (model.Image != "null") {
-                                                    val image = getBitmap(model.Image)
-                                                    localDataBaseViewModel.addContacts(
-                                                        SOSContacts_Entity(
-                                                            model.Phone,
-                                                            model.Priority,
-                                                            model.Name,
-                                                            image
-                                                        )
+                                                val image = getBitmap(model.Image)
+                                                localDataBaseViewModel.addContacts(
+                                                    SOSContacts_Entity(
+                                                        model.Phone,
+                                                        model.Priority,
+                                                        model.Name,
+                                                        image
                                                     )
-                                                } else {
-                                                    localDataBaseViewModel.addContacts(
-                                                        SOSContacts_Entity(
-                                                            model.Phone,
-                                                            model.Priority,
-                                                            model.Name,
-                                                            null
-                                                        )
-                                                    )
-                                                }
+                                                )
 
 
                                             }
@@ -430,8 +420,7 @@ class ListContacts : Fragment(R.layout.fragment_list_contacts) {
     private fun getByte(image: Bitmap): ByteArray {
         Log.d(TAG, "getByte: is called")
         val baos = ByteArrayOutputStream()
-        val bitmap = image
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos)
+        image.compress(Bitmap.CompressFormat.JPEG, 100, baos)
         return baos.toByteArray()
 
     }

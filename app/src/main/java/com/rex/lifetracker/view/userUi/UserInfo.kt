@@ -184,49 +184,21 @@ class UserInfo : AppCompatActivity() {
     ) {
         Log.d(TAG, "insertValue: is called")
 
-
         val dialogue =
             SpotsDialog.Builder().setContext(this).setTheme(R.style.LoadingUserInfo)
                 .setCancelable(true).build()
         dialogue?.show()
-            if (globalImage != "null") {
-                val job = CoroutineScope(Dispatchers.IO).launch {
-                    val result =
-                        localDataBaseUpload(getBitmap(globalImage), firstName, lastName)
-                    val result2 = FirebaseUpload(getByte(getBitmap(globalImage)), firstName, lastName)
+        val job = CoroutineScope(Dispatchers.IO).launch {
+            val result =
+                localDataBaseUpload(getBitmap(globalImage), firstName, lastName)
+            val result2 = FirebaseUpload(getByte(getBitmap(globalImage)), firstName, lastName)
 
-
-                }
-                job.invokeOnCompletion {
-                    dialogue?.dismiss()
-                    startActivity(Intent(this@UserInfo, TrustedNumberDetails::class.java))
-                    finish()
-                }
-
-            } else {
-                val job = CoroutineScope(Dispatchers.IO).launch {
-                    val result = FirebaseUpload(
-                        getByte(
-                            AppCompatResources.getDrawable(this@UserInfo, R.drawable.defaultimage)!!
-                                .toBitmap()
-                        ), firstName, lastName
-                    )
-                    val result2 = localDataBaseUpload(
-                        AppCompatResources.getDrawable(this@UserInfo, R.drawable.defaultimage)!!
-                            .toBitmap(), firstName, lastName
-                    )
-                }
-                job.invokeOnCompletion {
-                    dialogue?.dismiss()
-                    startActivity(Intent(this@UserInfo, TrustedNumberDetails::class.java))
-                    finish()
-                }
-
-
-            }
-
-
-
+        }
+        job.invokeOnCompletion {
+            dialogue.dismiss()
+            startActivity(Intent(this@UserInfo, TrustedNumberDetails::class.java))
+            finish()
+        }
 
 
     }
