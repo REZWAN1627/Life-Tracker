@@ -2,8 +2,11 @@ package com.rex.lifetracker.view.fragment.notificationTabItem
 
 import android.os.Bundle
 import android.view.View
+import androidx.activity.OnBackPressedCallback
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
+import androidx.navigation.Navigation
+import androidx.navigation.fragment.findNavController
 import com.rex.lifetracker.R
 import com.rex.lifetracker.databinding.FragmentInformationBinding
 import com.rex.lifetracker.viewModel.firebaseViewModel.AppsInformationViewModel
@@ -31,5 +34,7 @@ class Information : Fragment(R.layout.fragment_information) {
     private fun initViewModel() {
        appsInformationViewModel = ViewModelProvider(this).get(AppsInformationViewModel::class.java)
     }
+
+
 
 }

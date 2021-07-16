@@ -49,9 +49,9 @@ class MapsFragment : Fragment(R.layout.fragment_maps) {
         binding = FragmentMapsBinding.bind(view)
         binding.mapView.onCreate(savedInstanceState)
         fusedLocationProviderClient =
-            LocationServices.getFusedLocationProviderClient(requireContext());
+            LocationServices.getFusedLocationProviderClient(requireContext())
 
-        locationRequest = LocationRequest.create().setInterval(500).setFastestInterval(500)
+        locationRequest = LocationRequest.create().setInterval(5000L).setFastestInterval(5000L)
             .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
 
         binding.apply {
@@ -82,14 +82,13 @@ class MapsFragment : Fragment(R.layout.fragment_maps) {
         }
     }
     private fun setUserLocationMarker(location: Location) {
-        val latLng = LatLng(location.getLatitude(), location.getLongitude())
+        val latLng = LatLng(location.latitude, location.longitude)
         if (userLocationMarker == null) {
-
             //Create a new marker
             val markerOptions = MarkerOptions()
             markerOptions.position(latLng)
             markerOptions.icon( bitmapDescriptorFromVector(requireContext(),R.drawable.bikelogomap))
-            markerOptions.rotation(location.getBearing())
+            markerOptions.rotation(location.bearing)
             markerOptions.anchor(0.5.toFloat(), 0.5.toFloat())
             userLocationMarker = map?.addMarker(markerOptions)
             map?.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 17f))

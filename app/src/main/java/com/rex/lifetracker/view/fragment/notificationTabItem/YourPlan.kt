@@ -2,8 +2,10 @@ package com.rex.lifetracker.view.fragment.notificationTabItem
 
 import android.os.Bundle
 import android.view.View
+import androidx.activity.OnBackPressedCallback
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
+import androidx.navigation.fragment.findNavController
 import com.rex.lifetracker.R
 import com.rex.lifetracker.databinding.FragmentYourPlanBinding
 import com.rex.lifetracker.viewModel.LocalDataBaseVM.LocalDataBaseViewModel
@@ -46,5 +48,7 @@ class YourPlan : Fragment(R.layout.fragment_your_plan) {
     private fun initViewModel() {
         localDataBaseViewModel = ViewModelProvider(this).get(LocalDataBaseViewModel::class.java)
     }
+
+
 
 }

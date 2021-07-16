@@ -30,12 +30,12 @@ class Splash : AppCompatActivity() {
         AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
         supportActionBar?.hide()
 
-       // initSplashViewModel()
+        initSplashViewModel()
 
 
     }
 
-   /* private fun initSplashViewModel() {
+    private fun initSplashViewModel() {
         localDataBaseViewModel = ViewModelProvider(this).get(LocalDataBaseViewModel::class.java)
         signInViewModel = ViewModelProvider(
             this,
@@ -160,5 +160,5 @@ class Splash : AppCompatActivity() {
         if (disposable != null && !disposable.isDisposed) {
             disposable.dispose()
         }
-    }*/
+    }
 }

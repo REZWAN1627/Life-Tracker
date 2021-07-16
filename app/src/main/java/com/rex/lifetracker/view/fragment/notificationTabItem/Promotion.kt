@@ -5,8 +5,10 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.activity.OnBackPressedCallback
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
+import androidx.navigation.fragment.findNavController
 import com.rex.lifetracker.R
 import com.rex.lifetracker.databinding.FragmentPromotionBinding
 import com.rex.lifetracker.model.FireBaseModel.AppsAdminDataModelPackage.One_Month_Pack_Model
@@ -65,6 +67,7 @@ class Promotion : Fragment(R.layout.fragment_promotion) {
         appsInformationViewModel = ViewModelProvider(this)
             .get(AppsInformationViewModel::class.java)
     }
+
 
 
 }

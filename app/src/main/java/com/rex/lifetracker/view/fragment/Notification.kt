@@ -2,7 +2,9 @@ package com.rex.lifetracker.view.fragment
 
 import android.os.Bundle
 import android.view.View
+import androidx.activity.OnBackPressedCallback
 import androidx.fragment.app.Fragment
+import androidx.navigation.fragment.findNavController
 import androidx.viewpager2.widget.ViewPager2.OnPageChangeCallback
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayout.OnTabSelectedListener
@@ -44,6 +46,13 @@ class Notification : Fragment(R.layout.fragment_notification) {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         val binding = FragmentNotificationBinding.bind(view)
+        val callback: OnBackPressedCallback =
+            object : OnBackPressedCallback(true /* enabled by default */) {
+                override fun handleOnBackPressed() {
+                    findNavController().navigate(R.id.mapsFragment)
+                }
+            }
+        requireActivity().onBackPressedDispatcher.addCallback(requireActivity(), callback)
 
         binding.apply {
             viewPager.adapter = FragmentAdapter(childFragmentManager,lifecycle)
@@ -69,6 +78,7 @@ class Notification : Fragment(R.layout.fragment_notification) {
         }
 
     }
+
     //
 //    companion object {
 //        /**

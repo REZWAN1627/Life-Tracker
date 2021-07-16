@@ -19,6 +19,7 @@ import android.provider.Settings
 import android.util.Log
 import android.util.TypedValue
 import android.view.KeyEvent
+import android.view.MenuItem
 import android.view.View
 import android.view.Window
 import android.widget.Button
@@ -86,6 +87,7 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
     private lateinit var googleSignInClient: GoogleSignInClient
     private lateinit var localDataBaseViewModel: LocalDataBaseViewModel
     private lateinit var userActiveTime: String
+    private var menuGlob:MenuItem? =null
 
     private var packageOrTrileOver = false
 
@@ -142,6 +144,7 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
 
             //controlling bottom nav
             bottomNavigationView.setOnItemSelectedListener { menu ->
+            menuGlob = menu
                 when (menu.itemId) {
                     R.id.notification -> {
                         BottomSheetBehavior.from(bottomSheet).state =
@@ -371,7 +374,7 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
 
         mLocationManager = getSystemService(LOCATION_SERVICE) as LocationManager
         mSettingClient = LocationServices.getSettingsClient(this)
-        mLocationRequest = LocationRequest.create().setInterval(500).setFastestInterval(500)
+        mLocationRequest = LocationRequest.create().setInterval(5000L).setFastestInterval(5000L)
             .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
 
         if (mLocationManager != null) {
