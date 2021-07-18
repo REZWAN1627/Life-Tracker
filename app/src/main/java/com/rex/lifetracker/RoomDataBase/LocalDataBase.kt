@@ -11,6 +11,7 @@ import com.rex.lifetracker.RoomDataBase.LocalDataBase_Entity.SOSContacts_Entity
 import com.rex.lifetracker.RoomDataBase.LocalDataBase_Entity.deleteContactsCacheModel
 import com.rex.lifetracker.utils.Converters
 
+
 @Database(
     entities = [SOSContacts_Entity::class,
         PersonalInfo_Entity::class,

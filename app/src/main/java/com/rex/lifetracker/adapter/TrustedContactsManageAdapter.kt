@@ -103,6 +103,10 @@ class TrustedContactsManageAdapter(context: Context) :
 
             i++
         }
+        Log.d(
+            TAG,
+            "setValue: initial arrayList1 -- > $selectCheck  initial arraylist2 --> $selectCheck2 "
+        )
 
         notifyDataSetChanged()
     }
@@ -155,68 +159,86 @@ class TrustedContactsManageAdapter(context: Context) :
         holder.bind(localDataBaseList[position], context, position)
     }
 
-    fun setSelectedValue(localDataBaseViewModel: LocalDataBaseViewModel): Boolean {
+    fun getSelectedValue(): ArrayList<SOSContacts_Entity> {
         Log.d(TAG, "setSelectedValue: 1 $selectCheck")
         Log.d(TAG, "setSelectedValue: 2 $selectCheck2")
+        val listContacts = ArrayList<SOSContacts_Entity>()
         var i = 0
-        var enable = true
-
+        var flagFirst = true
         while (i < selectCheck.size) {
             if (selectCheck[i] == 1) {
-                localDataBaseViewModel.addContacts(
-                    SOSContacts_Entity(
-                        localDataBaseList[i].Phone,
-                        "First",
-                        localDataBaseList[i].Name,
-                        localDataBaseList[i].Image
+                if (flagFirst){
+                    listContacts.add(
+                        0,
+                        SOSContacts_Entity(
+                            localDataBaseList[i].Phone,
+                            "First",
+                            localDataBaseList[i].Name,
+                            localDataBaseList[i].Image
+                        )
                     )
-                )
+
+                    flagFirst = false
+                }else{
+                    listContacts.add(1,
+                        SOSContacts_Entity(
+                            localDataBaseList[i].Phone,
+                            "First",
+                            localDataBaseList[i].Name,
+                            localDataBaseList[i].Image
+                        )
+                    )
+                }
+
 
                 flag1 = true
             }
             if (selectCheck2[i] == 1) {
-                localDataBaseViewModel.addContacts(
-                    SOSContacts_Entity(
-                        localDataBaseList[i].Phone,
-                        "Second",
-                        localDataBaseList[i].Name,
-                        localDataBaseList[i].Image
+                if (flagFirst){
+                    listContacts.add(
+                        0,
+                        SOSContacts_Entity(
+                            localDataBaseList[i].Phone,
+                            "Second",
+                            localDataBaseList[i].Name,
+                            localDataBaseList[i].Image
+                        )
                     )
-                )
+                    flagFirst = false
+                }else{
+                    listContacts.add(
+                        1,
+                        SOSContacts_Entity(
+                            localDataBaseList[i].Phone,
+                            "Second",
+                            localDataBaseList[i].Name,
+                            localDataBaseList[i].Image
+                        )
+                    )
+                }
+
 
                 flag2 = true
             }
-            if (selectCheck[i] != 1 && selectCheck2[i] != 1) {
-                localDataBaseViewModel.addContacts(
-                    SOSContacts_Entity(
-                        localDataBaseList[i].Phone,
-                        "null",
-                        localDataBaseList[i].Name,
-                        localDataBaseList[i].Image
-                    )
-                )
-            }
-
             i++
         }
 
         if (!flag1 && !flag2) {
             Toast.makeText(context, "Option not selected", Toast.LENGTH_SHORT).show()
-            enable = false
+            return listContacts
+
         } else if (!flag2 || !flag1) {
             Toast.makeText(context, "One of the option is not selected", Toast.LENGTH_SHORT).show()
-            enable = false
+            return listContacts
         } else {
             selectCheck.clear()
             selectCheck2.clear()
-
         }
 
-
-
-        return enable
+        return listContacts
 
     }
+
 
     override fun getItemCount(): Int {
         return localDataBaseList.size

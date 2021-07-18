@@ -141,30 +141,7 @@ class AddContacts : Fragment(R.layout.fragment_add_contacts), EasyPermissions.Pe
         findNavController().navigate(R.id.action_addContacts2_to_listContacts)
         dialogue.dismiss()
 
-//        storageRef.child(binding.contactNumber.text.toString()).putFile(imageUri!!)
-//            .addOnSuccessListener {
-//
-//                if (it.task.isComplete) {
-//                    Log.d(TAG, "onViewCreated: ")
-//                    storageRef.child(binding.contactNumber.text.toString()).downloadUrl.addOnSuccessListener {
-//
-//                        binding.apply {
-//                            trustedContactsViewModel.insertTrustedContactsInfo(
-//                                TrustedContactsModel(
-//                                    "null",
-//                                    contactName.text.toString(),
-//                                    contactNumber.text.toString(),
-//                                    it.toString()
-//                                )
-//                            )
-//
-//
-//                        }
-//
-//                    }
-//
-//                }
-//            }
+
     }
 
 

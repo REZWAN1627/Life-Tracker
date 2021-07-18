@@ -10,7 +10,7 @@ class TrustedContactsViewModel : ViewModel() {
 
     private val trustedContactsRepository = TrustedContactsRepository()
 
-    var getContactsLiveData: MutableLiveData<List<TrustedContactsModel>>? =
+    var getContactsLiveData =
         trustedContactsRepository.getTrustedContactsInfo()
 
 

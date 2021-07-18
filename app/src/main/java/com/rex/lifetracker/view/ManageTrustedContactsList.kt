@@ -10,7 +10,6 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.github.pwittchen.reactivenetwork.library.rx2.ReactiveNetwork
 import com.rex.lifetracker.R
-import com.rex.lifetracker.RoomDataBase.LocalDataBase_Entity.SIM_Entity
 import com.rex.lifetracker.RoomDataBase.LocalDataBase_Entity.SOSContacts_Entity
 import com.rex.lifetracker.adapter.TrustedContactsManageAdapter
 import com.rex.lifetracker.databinding.ActivityManageTrustedContactsListBinding
@@ -25,6 +24,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.io.ByteArrayOutputStream
+import java.util.ArrayList
 
 class ManageTrustedContactsList : AppCompatActivity() {
     private lateinit var trustedContactsViewModel: TrustedContactsViewModel
@@ -33,6 +33,7 @@ class ManageTrustedContactsList : AppCompatActivity() {
     private lateinit var localDataBaseViewModel: LocalDataBaseViewModel
     private var isInternetConnected = false
     private var internetDisposable: Disposable? = null
+    private lateinit var priorityList:ArrayList<SOSContacts_Entity>
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -41,7 +42,6 @@ class ManageTrustedContactsList : AppCompatActivity() {
         setContentView(binding.root)
 
         initViewModel()
-
         setValue()
 
 
@@ -60,30 +60,19 @@ class ManageTrustedContactsList : AppCompatActivity() {
             //not to restart setValue
 
             Log.d(TAG, "onCreate: button pressed is called")
-            val dialogue =
-                SpotsDialog.Builder().setContext(this).setTheme(R.style.Saving)
-                    .setCancelable(false).build()
-            dialogue?.show()
-            val value = mAdapter.setSelectedValue(localDataBaseViewModel)
-            Log.d(TAG, "onCreate: return value $value")
-            if (value) {
-                if (isInternetConnected) {
-                    localDataBaseViewModel.readAllContacts?.observe(
-                        this,
-                        Observer { NumberList ->
 
-                            uploadDataToFireBase(NumberList)
+            priorityList = mAdapter.getSelectedValue()
+            Log.d(TAG, "onCreate: listof prior: $priorityList")
+            if (priorityList.isNotEmpty()){
+                for (list in priorityList){
+                    localDataBaseViewModel.addContacts(SOSContacts_Entity(
+                        list.Phone,list.Priority,list.Name,list.Image
+                    ))
+                }
+                if (isInternetConnected){
+                    uploadDataToFireBase(priorityList)
+                }else{
 
-                        })
-
-                    dialogue.dismiss()
-                } else {
-                    localDataBaseViewModel.addSIMSlot(
-                        SIM_Entity(
-                            0, "0"
-                        )
-                    )
-                    dialogue.dismiss()
                     startActivity(
                         Intent(this, MainActivity::class.java).putExtra(
                             "Service",
@@ -92,17 +81,8 @@ class ManageTrustedContactsList : AppCompatActivity() {
                     )
                     finish()
                 }
-            } else {
-                startActivity(
-                    Intent(this, MainActivity::class.java).putExtra(
-                        "Service",
-                        "NO"
-                    )
-                )
-                finish()
-                dialogue.dismiss()
-                return@setOnClickListener
             }
+
         }
     }
 

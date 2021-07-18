@@ -37,6 +37,9 @@ class SystemShakeAlert_broadcastReceiver : BroadcastReceiver() {
             }
             STOP_SERVICE_ACTION_CALL -> {
                 context?.stopService(Intent(context, CallingServices::class.java))
+                context?.startService(Intent(context, MotionDetectService::class.java).apply {
+                    this.action = Constant.ACTION_START_SERVICE
+                })
             }
             START_PHONE_SERVICES -> {
 //                context?.stopService(Intent(context, MotionDetectService::class.java))

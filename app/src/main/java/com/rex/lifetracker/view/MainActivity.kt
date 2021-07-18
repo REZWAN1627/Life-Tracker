@@ -18,7 +18,6 @@ import android.os.*
 import android.provider.Settings
 import android.util.Log
 import android.util.TypedValue
-import android.view.KeyEvent
 import android.view.MenuItem
 import android.view.View
 import android.view.Window

@@ -10,22 +10,19 @@ import android.graphics.Color
 import android.location.Location
 import android.os.Bundle
 import android.os.Looper
-import android.util.Log
 import android.view.View
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.Observer
 import com.google.android.gms.location.*
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.model.*
+import com.rex.lifetracker.R
 import com.rex.lifetracker.databinding.FragmentMapsBinding
 import com.rex.lifetracker.service.MotionDetectService
 import com.rex.lifetracker.service.Polyline
 import com.rex.lifetracker.utils.Constant
-import com.rex.lifetracker.utils.Constant.TAG
-import com.rex.lifetracker.R
 
 
 class MapsFragment : Fragment(R.layout.fragment_maps) {
@@ -76,20 +73,21 @@ class MapsFragment : Fragment(R.layout.fragment_maps) {
     var locationCallback: LocationCallback = object : LocationCallback() {
         override fun onLocationResult(locationResult: LocationResult) {
             super.onLocationResult(locationResult)
-           // Log.d(TAG, "onLocationResult: location -> $locationResult")
-           // Log.d(TAG, "onLocationResult: " + locationResult.lastLocation)
+            // Log.d(TAG, "onLocationResult: location -> $locationResult")
+            // Log.d(TAG, "onLocationResult: " + locationResult.lastLocation)
             if (map != null) {
                 setUserLocationMarker(locationResult.lastLocation)
             }
         }
     }
+
     private fun setUserLocationMarker(location: Location) {
         val latLng = LatLng(location.latitude, location.longitude)
         if (userLocationMarker == null) {
             //Create a new marker
             val markerOptions = MarkerOptions()
             markerOptions.position(latLng)
-            markerOptions.icon( bitmapDescriptorFromVector(requireContext(),R.drawable.bikelogomap))
+            markerOptions.icon(bitmapDescriptorFromVector(requireContext(), R.drawable.bikelogomap))
             markerOptions.rotation(location.bearing)
             markerOptions.anchor(0.5.toFloat(), 0.5.toFloat())
             userLocationMarker = map?.addMarker(markerOptions)
@@ -238,3 +236,4 @@ class MapsFragment : Fragment(R.layout.fragment_maps) {
     }
 
 }
+

@@ -23,8 +23,12 @@ import com.google.android.gms.location.LocationServices
 import com.rex.lifetracker.R
 import com.rex.lifetracker.service.broadcast_receiver.SystemShakeAlert_broadcastReceiver
 import com.rex.lifetracker.utils.Constant
+import com.rex.lifetracker.utils.Constant.TAG
 import com.rex.lifetracker.view.MainActivity
 import com.rex.lifetracker.viewModel.LocalDataBaseVM.LocalDataBaseViewModel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.util.*
 
 class CallingServices : LifecycleService() {
@@ -51,7 +55,7 @@ class CallingServices : LifecycleService() {
 
         override fun onCallStateChanged(state: Int, number: String) {
 
-            Log.d(Constant.TAG, "onCallStateChanged: is called ")
+            //  Log.d(Constant.TAG, "onCallStateChanged: is called ")
             when (state) {
 
                 TelephonyManager.CALL_STATE_IDLE -> {
@@ -61,7 +65,7 @@ class CallingServices : LifecycleService() {
 
                     } else if (calling && duration <= 1 && count < callingNumber.size) {
                         callingFirst = false
-                        Log.d(Constant.TAG, "onCallStateChanged: count $count")
+                        // Log.d(Constant.TAG, "onCallStateChanged: count $count")
                         count2++
 
                         if (count2 == 2) {
@@ -75,7 +79,7 @@ class CallingServices : LifecycleService() {
                         }
 
                     } else {
-                        Log.d(Constant.TAG, "onCallStateChanged: unregister is called")
+                        //  Log.d(Constant.TAG, "onCallStateChanged: unregister is called")
                         count = 0
                         count2 = 0
                         unregisterTelephoneListen()
@@ -85,7 +89,7 @@ class CallingServices : LifecycleService() {
 
 
             }
-            Log.d(Constant.TAG, "onCallStateChanged last call duration ---- else: $duration")
+            //   Log.d(Constant.TAG, "onCallStateChanged last call duration ---- else: $duration")
             duration = getLastCallDuration()
 
             // Toast.makeText(this@SOS, "Help", Toast.LENGTH_SHORT).show()
@@ -94,7 +98,7 @@ class CallingServices : LifecycleService() {
     }
 
     private fun unregisterTelephoneListen() {
-        Log.d(Constant.TAG, "unregisterTelephoneListen: is called")
+        //   Log.d(Constant.TAG, "unregisterTelephoneListen: is called")
         telephonyManager.listen(mPhoneStateListener, PhoneStateListener.LISTEN_NONE)
         stopSelf()
         this.startActivity(
@@ -127,7 +131,7 @@ class CallingServices : LifecycleService() {
         localDataBaseViewModel = LocalDataBaseViewModel(this.application)
         arrangeArrayList()
         checkSimSlot()
-        MotionDetectService.isTracking.postValue(true)
+        //MotionDetectService.isTracking.postValue(true)
 
 
         val stopService = PendingIntent.getBroadcast(
@@ -158,68 +162,73 @@ class CallingServices : LifecycleService() {
     private fun arrangeArrayList() {
         localDataBaseViewModel.readAllContacts.observe(this, {
 
-            var i = 0
-            while (i < it.size) {
-                when (it[i].Priority) {
-                    "First" -> {
-                        Log.d(Constant.TAG, "initModelView: index $i is first")
-                        if (callingNumber.isEmpty()) {
-                            callingNumber.add(0, it[i].Phone)
-                        } else {
-                            val temp = callingNumber[0]
-                            callingNumber[0] = it[i].Phone
-                            callingNumber.add(i, temp)
-                        }
+           val job = CoroutineScope(Dispatchers.Default).launch {
+               var i = 0
+               while (i < it.size) {
+                   when (it[i].Priority) {
+                       "First" -> {
+                           //  Log.d(Constant.TAG, "initModelView: index $i is first")
+                           if (callingNumber.isEmpty()) {
+                               callingNumber.add(0, it[i].Phone)
+                           } else {
+                               val temp = callingNumber[0]
+                               callingNumber[0] = it[i].Phone
+                               callingNumber.add(i, temp)
+                           }
 
-                    }
-                    "Second" -> {
-                        Log.d(Constant.TAG, "initModelView: index $i is second")
+                       }
+                       "Second" -> {
+                           //  Log.d(Constant.TAG, "initModelView: index $i is second")
 
-                        when {
-                            callingNumber.isEmpty() -> {
-                                SOSNumber2 = it[i].Phone
-                                Log.d(Constant.TAG, "initModelView: phone $SOSNumber2")
-                                callingNumber.add(i, it[i + 1].Phone)
-                                index = i
-                                Log.d(Constant.TAG, "initModelView: index --- > $index")
-                                Log.d(
-                                    Constant.TAG,
-                                    "initModelView: short array -- > $callingNumber"
-                                )
-                                indexFlag = true
+                           when {
+                               callingNumber.isEmpty() -> {
+                                   SOSNumber2 = it[i].Phone
+                                   //   Log.d(Constant.TAG, "initModelView: phone $SOSNumber2")
+                                   callingNumber.add(i, it[i + 1].Phone)
+                                   index = i
+                                   //  Log.d(Constant.TAG, "initModelView: index --- > $index")
+//                                Log.d(
+//                                    Constant.TAG,
+//                                    "initModelView: short array -- > $callingNumber"
+//                                )
+                                   indexFlag = true
 
-                            }
-                            callingNumber.size == 1 -> {
-                                callingNumber.add(i, it[i].Phone)
-                            }
-                            else -> {
-                                val temp = callingNumber[1]
-                                callingNumber[1] = it[i].Phone
-                                callingNumber.add(i, temp)
-                            }
-                        }
+                               }
+                               callingNumber.size == 1 -> {
+                                   callingNumber.add(i, it[i].Phone)
+                               }
+                               else -> {
+                                   val temp = callingNumber[1]
+                                   callingNumber[1] = it[i].Phone
+                                   callingNumber.add(i, temp)
+                               }
+                           }
 
 
-                    }
-                    else -> {
+                       }
+                       else -> {
 
-                        callingNumber.add(i, it[i].Phone)
-                    }
-                }
-                messagingNumber.add(i, it[i].Phone)
+                           callingNumber.add(i, it[i].Phone)
+                       }
+                   }
+                   messagingNumber.add(i, it[i].Phone)
 
-                i++
+                   i++
+               }
+
+               if (indexFlag) {
+                   //Log.d(Constant.TAG, "initModelView: flag is true")
+                   callingNumber[index + 1] = SOSNumber2
+               }
+
+               Log.d(TAG, "initModelView: list number array $messagingNumber")
+               Log.d(TAG, "initModelView: list number array sorted --->  $callingNumber")
+           }
+            job.invokeOnCompletion {
+                getCurrentLocation()
             }
 
-            if (indexFlag) {
-                Log.d(Constant.TAG, "initModelView: flag is true")
-                callingNumber[index + 1] = SOSNumber2
-            }
 
-            Log.d(Constant.TAG, "initModelView: list number array $messagingNumber")
-            Log.d(Constant.TAG, "initModelView: list number array sorted --->  $callingNumber")
-
-            getCurrentLocation()
 
 
         })
@@ -259,13 +268,13 @@ class CallingServices : LifecycleService() {
             .addOnSuccessListener { location: Location? ->
                 // Got last known location. In some rare situations this can be null.
                 if (location != null) {
-                    Log.d(
-                        Constant.TAG,
-                        "getCurrentLocation: ${location.latitude},${location.longitude}"
-                    )
+//                    Log.d(
+//                        Constant.TAG,
+//                        "getCurrentLocation: ${location.latitude},${location.longitude}"
+//                    )
                     sms =
                         "https://maps.google.com/?q=${location.latitude},${location.longitude}"
-                    Log.d(Constant.TAG, "getCurrentLocation: is $sms")
+                    // Log.d(Constant.TAG, "getCurrentLocation: is $sms")
                     sendSms(sms)
 
 
@@ -276,14 +285,16 @@ class CallingServices : LifecycleService() {
     }
 
     private fun sendSms(s: String) {
-
-
-        var i = 0
-        while (i < messagingNumber.size) {
-            smsManager.sendTextMessage(messagingNumber[i], null, "Help! -- > $s", null, null)
-            i++
+        val job = CoroutineScope(Dispatchers.Default).launch{
+            for (number in messagingNumber) {
+                Log.d(TAG, "sendSms: is called with: $number")
+                smsManager.sendTextMessage(number, null, "Help! -- > $s", null, null)
+            }
         }
-        telephonyManager.listen(mPhoneStateListener, PhoneStateListener.LISTEN_CALL_STATE)
+        job.invokeOnCompletion {
+            telephonyManager.listen(mPhoneStateListener, PhoneStateListener.LISTEN_CALL_STATE)
+        }
+
 
 
     }
@@ -292,7 +303,7 @@ class CallingServices : LifecycleService() {
     private fun makePhoneCall(number: String) {
 
         if (simSlotFlag) {
-            Log.e(Constant.TAG, "makePhoneCall: has sim slot")
+            //  Log.e(Constant.TAG, "makePhoneCall: has sim slot")
             var phoneAccountHandleList: List<PhoneAccountHandle?> = emptyList()
             val item = simSlotNumber // 0 for sim1 & 1 for sim2
 
@@ -347,14 +358,14 @@ class CallingServices : LifecycleService() {
             startActivity(intent)
 
         } else {
-            Log.e(Constant.TAG, "makePhoneCall: default sim slot")
+            //   Log.e(Constant.TAG, "makePhoneCall: default sim slot")
             startActivity(
                 Intent(
                     Intent.ACTION_CALL,
                     Uri.parse("tel:$number")
                 ).setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             )
-            Log.d(Constant.TAG, "makePhoneCall: is called")
+            // Log.d(Constant.TAG, "makePhoneCall: is called")
         }
 
 
@@ -370,14 +381,14 @@ class CallingServices : LifecycleService() {
 
 
         if (cur != null && cur.moveToFirst()) {
-            Log.d(
-                Constant.TAG,
-                "getLastCallDuration: is called is --------> " + cur.getString(
-                    cur.getColumnIndex(CallLog.Calls.DURATION)
-                )
-            )
+//            Log.d(
+//                Constant.TAG,
+//                "getLastCallDuration: is called is --------> " + cur.getString(
+//                    cur.getColumnIndex(CallLog.Calls.DURATION)
+//                )
+//            )
             duration = if (callingFirst) {
-                Log.d(Constant.TAG, "getLastCallDuration: first")
+                //  Log.d(Constant.TAG, "getLastCallDuration: first")
                 0
                 //callingFirst = false
             } else {
@@ -393,10 +404,13 @@ class CallingServices : LifecycleService() {
     }
 
     override fun onDestroy() {
+        Log.d(TAG, "onDestroy: is called")
         duration = 0
         count = 0
         count2 = 0
         telephonyManager.listen(mPhoneStateListener, PhoneStateListener.LISTEN_NONE)
+        messagingNumber.clear()
+        callingNumber.clear()
         super.onDestroy()
     }
 }

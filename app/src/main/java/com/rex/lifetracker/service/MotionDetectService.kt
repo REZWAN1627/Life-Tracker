@@ -3,7 +3,11 @@ package com.rex.lifetracker.service
 import android.annotation.SuppressLint
 import android.app.Notification
 import android.app.PendingIntent
+import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Color
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
@@ -19,6 +23,7 @@ import android.support.v4.media.session.PlaybackStateCompat
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
 
 import androidx.lifecycle.*
 import androidx.media.VolumeProviderCompat
@@ -27,7 +32,10 @@ import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationRequest.PRIORITY_HIGH_ACCURACY
 import com.google.android.gms.location.LocationResult
-import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.CameraUpdateFactory
+import com.google.android.gms.maps.GoogleMap
+import com.google.android.gms.maps.OnMapReadyCallback
+import com.google.android.gms.maps.model.*
 import com.rex.lifetracker.R
 import com.rex.lifetracker.service.broadcast_receiver.SystemShakeAlert_broadcastReceiver
 import com.rex.lifetracker.utils.Constant.ACTION_START_SERVICE
@@ -56,12 +64,12 @@ import kotlin.math.sqrt
 typealias Polyline = MutableList<LatLng>
 typealias Polylines = MutableList<Polyline>
 
-class MotionDetectService : LifecycleService(), SensorEventListener, LifecycleObserver {
+class MotionDetectService : LifecycleService(), SensorEventListener, LifecycleObserver{
     //detect apps forground and background state
     var wasInBackground = false
 
-    var mAudioManager: AudioManager? = null
-    var mHandler: Handler? = null
+
+
 
     //sensor ans notification
     private var sensorManager: SensorManager? = null
@@ -74,7 +82,7 @@ class MotionDetectService : LifecycleService(), SensorEventListener, LifecycleOb
     private var accelerationZ: Double = 0.0
 
     //accident threashold
-    private val threshold = 55
+    private val threshold = 65
 
     // Minimum acceleration needed to count as a shake movement
     private val MIN_SHAKE_ACCELERATION = 12
@@ -105,12 +113,9 @@ class MotionDetectService : LifecycleService(), SensorEventListener, LifecycleOb
 
     //----------------------googleMap------------------------//
 
-    var isFirstRun = true
 
     lateinit var fusedLocationProviderClient: FusedLocationProviderClient
-//    private val mReceiver: BroadcastReceiver = VolumeButtonPressed()
-//
-//    private lateinit var mSettingsContentObserver:SettingsContentObserver
+
 
     private var mediaSession: MediaSessionCompat? = null
     private var volumePressed = 0
@@ -145,17 +150,7 @@ class MotionDetectService : LifecycleService(), SensorEventListener, LifecycleOb
 
         volumeButtonPressed()
 
-        //screen on off broad cast
-//        val filter = IntentFilter()
-//        filter.addAction("android.media.VOLUME_CHANGED_ACTION")
-//        registerReceiver(mReceiver, filter)
 
-//         mSettingsContentObserver = SettingsContentObserver(this, Handler(Looper.getMainLooper()))
-//        applicationContext.contentResolver.registerContentObserver(
-//            Settings.System.CONTENT_URI,
-//            true,
-//            mSettingsContentObserver
-//        )
 
 
     }
@@ -215,6 +210,8 @@ class MotionDetectService : LifecycleService(), SensorEventListener, LifecycleOb
                     locationCallback,
                     Looper.getMainLooper()
                 )
+//                map?.uiSettings?.isMyLocationButtonEnabled = true
+//                map?.isMyLocationEnabled = true
             }
         } else {
             fusedLocationProviderClient.removeLocationUpdates(locationCallback)
@@ -224,9 +221,10 @@ class MotionDetectService : LifecycleService(), SensorEventListener, LifecycleOb
     private val locationCallback = object : LocationCallback() {
         override fun onLocationResult(result: LocationResult?) {
             super.onLocationResult(result)
+
+
             if (isTracking.value!!) {
                 //     Log.d(TAG, "onLocationResult: is called")
-
                 result?.locations?.let { locations ->
                     for (location in locations) {
                         addPathPoint(location)
@@ -240,6 +238,8 @@ class MotionDetectService : LifecycleService(), SensorEventListener, LifecycleOb
             }
         }
     }
+
+
 
     private fun addPathPoint(location: Location?) {
         location?.let {
@@ -391,9 +391,7 @@ class MotionDetectService : LifecycleService(), SensorEventListener, LifecycleOb
 
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-//        val filter = IntentFilter()
-//        filter.addAction("android.media.VOLUME_CHANGED_ACTION")
-//        registerReceiver(mReceiver, filter)
+
         intent?.let {
             when (it.action) {
                 ACTION_START_SERVICE -> {
@@ -413,15 +411,7 @@ class MotionDetectService : LifecycleService(), SensorEventListener, LifecycleOb
                     postInitialValues()
                     stopSelf()
                 }
-                ACTION_WOMEN_SAFETY_SERVICE -> {
-                    //unregisterReceiver(mReceiver)
-                    //  womenSafety()
-                }
 
-                else -> {
-                    //do nothing
-                    //  Log.d(TAG, "onStartCommand: services is sttoped")
-                }
             }
         }
 
@@ -431,6 +421,7 @@ class MotionDetectService : LifecycleService(), SensorEventListener, LifecycleOb
     }
 
     private fun womenSafety() {
+        mediaSession!!.isActive = false
         sensorManager?.unregisterListener(this)
         fusedLocationProviderClient.removeLocationUpdates(locationCallback)
         //
@@ -619,11 +610,13 @@ class MotionDetectService : LifecycleService(), SensorEventListener, LifecycleOb
     override fun onDestroy() {
         sensorManager?.unregisterListener(this)
         mediaSession!!.isActive = false
-        // applicationContext.contentResolver.unregisterContentObserver(mSettingsContentObserver)
-        stopSelf()
+
         super.onDestroy()
 
     }
+
+
+
 
 
 }

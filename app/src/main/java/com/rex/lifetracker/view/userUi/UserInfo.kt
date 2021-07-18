@@ -6,10 +6,8 @@ import android.graphics.drawable.BitmapDrawable
 import android.os.Bundle
 import android.text.TextUtils
 import android.util.Log
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.content.res.AppCompatResources
-import androidx.core.graphics.drawable.toBitmap
-import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import coil.ImageLoader
@@ -17,15 +15,18 @@ import coil.request.ImageRequest
 import coil.request.SuccessResult
 import com.bumptech.glide.Glide
 import com.github.pwittchen.reactivenetwork.library.rx2.ReactiveNetwork
-import com.google.firebase.auth.FirebaseAuth
 import com.rex.lifetracker.R
 import com.rex.lifetracker.RoomDataBase.LocalDataBase_Entity.PersonalInfo_Entity
 import com.rex.lifetracker.databinding.ActivityUserInfoBinding
 import com.rex.lifetracker.model.FireBaseModel.UserInfoModel
+import com.rex.lifetracker.RoomDataBase.LocalDataBase_Entity.SIM_Entity
+import com.rex.lifetracker.RoomDataBase.LocalDataBase_Entity.SOSContacts_Entity
 import com.rex.lifetracker.utils.Constant.TAG
 import com.rex.lifetracker.view.TrustedNumberDetails
 import com.rex.lifetracker.viewModel.LocalDataBaseVM.LocalDataBaseViewModel
 import com.rex.lifetracker.viewModel.firebaseViewModel.SignInViewModel
+import com.rex.lifetracker.viewModel.firebaseViewModel.SimSlotViewModel
+import com.rex.lifetracker.viewModel.firebaseViewModel.TrustedContactsViewModel
 import com.rex.lifetracker.viewModel.firebaseViewModel.UserInfoViewModel
 import dmax.dialog.SpotsDialog
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -41,6 +42,7 @@ class UserInfo : AppCompatActivity() {
     private lateinit var binding: ActivityUserInfoBinding
     private lateinit var signInViewModel: SignInViewModel
     private lateinit var userInfoViewModel: UserInfoViewModel
+    private lateinit var trustedContactsViewModel: TrustedContactsViewModel
     private  var After7DaysDate: String? = null
     private  var currentDate: String? = null
     private  var currentDate2: String? = null
@@ -53,6 +55,9 @@ class UserInfo : AppCompatActivity() {
     private var subsPack: String = "Trail Version"
     private var broughtPack : String = "null"
     private var status: String = "On going"
+    private var isInternetConnected = false
+    private var internetDisposable: Disposable? = null
+    private lateinit var simSlotViewModel: SimSlotViewModel
 
 
 
@@ -65,6 +70,8 @@ class UserInfo : AppCompatActivity() {
         initModel()
         formattingDate()
         setInfo()
+        simSlot()
+       // populateDataBase()
 
         // showDialog()
 
@@ -80,13 +87,21 @@ class UserInfo : AppCompatActivity() {
                     return@setOnClickListener
                 } else {
 
+                    if (isInternetConnected){
+                        insertValue(
+                            userFirstName.text.toString(),
+                            userLastName.text.toString(),
 
-                    insertValue(
-                        userFirstName.text.toString(),
-                        userLastName.text.toString(),
+                            )
+                        Log.d(TAG, "getInfo: " + userLastName.text)
+                    }else{
+                        Toast.makeText(
+                            this@UserInfo,
+                            "You need Internet Connect",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
 
-                        )
-                    Log.d(TAG, "getInfo: " + userLastName.text)
                 }
 
             }
@@ -94,6 +109,25 @@ class UserInfo : AppCompatActivity() {
 
 
     }
+
+    private fun simSlot() {
+        simSlotViewModel.getSelectedSimSlot.observe(this,{sim->
+            if (sim != null){
+                localDataBaseViewModel.addSIMSlot(
+                    SIM_Entity(
+                        0, sim.SELECTED_SIM_SLOT
+                    )
+                )
+            }else{
+                localDataBaseViewModel.addSIMSlot(
+                    SIM_Entity(
+                        0, "0"
+                    )
+                )
+            }
+        })
+    }
+
 
     private fun formattingDate() {
 
@@ -105,6 +139,7 @@ class UserInfo : AppCompatActivity() {
     }
 
     private fun initModel() {
+        trustedContactsViewModel = ViewModelProvider(this).get(TrustedContactsViewModel::class.java)
         localDataBaseViewModel = ViewModelProvider(this).get(LocalDataBaseViewModel::class.java)
         Log.d(TAG, "initModel: is called")
         userInfoViewModel = ViewModelProvider(
@@ -117,6 +152,7 @@ class UserInfo : AppCompatActivity() {
         ).get(
             SignInViewModel::class.java
         )
+        simSlotViewModel = ViewModelProvider(this).get(SimSlotViewModel::class.java)
 
     }
 
@@ -251,6 +287,31 @@ class UserInfo : AppCompatActivity() {
         return baos.toByteArray()
 
     }
+
+    override fun onResume() {
+        super.onResume()
+        internetDisposable = ReactiveNetwork
+            .observeInternetConnectivity()
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe { isConnectedToInternet ->
+                isInternetConnected = isConnectedToInternet
+
+            }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        safelyDispose(internetDisposable)
+    }
+
+    private fun safelyDispose(disposable: Disposable?) {
+        if (disposable != null && !disposable.isDisposed) {
+            disposable.dispose()
+        }
+    }
+
+
 
 
 

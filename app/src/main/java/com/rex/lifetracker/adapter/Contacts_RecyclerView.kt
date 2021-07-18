@@ -8,8 +8,6 @@ import com.bumptech.glide.Glide
 import com.rex.lifetracker.R
 import com.rex.lifetracker.RoomDataBase.LocalDataBase_Entity.SOSContacts_Entity
 import com.rex.lifetracker.databinding.TrustedPropleItemBinding
-import com.rex.lifetracker.model.FireBaseModel.TrustedContactsModel
-import com.squareup.picasso.Picasso
 
 
 class Contacts_RecyclerView(context: Context) :
