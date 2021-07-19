@@ -47,6 +47,7 @@ import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 import com.rex.lifetracker.R
+import com.rex.lifetracker.RoomDataBase.LocalDataBase_Entity.PersonalInfo_Entity
 import com.rex.lifetracker.RoomDataBase.LocalDataBase_Entity.SIM_Entity
 import com.rex.lifetracker.adapter.Contacts_RecyclerView
 import com.rex.lifetracker.databinding.ActivityMainBinding
@@ -88,10 +89,6 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
     private lateinit var userActiveTime: String
     private var menuGlob:MenuItem? =null
 
-
-
-    //    private var isInternetConnected = false
-//    private var internetDisposable: Disposable? = null
     private var timeCountInMilliSeconds = (30 * 1000).toLong()
     private var countDownTimer: CountDownTimer? = null
     private var mSettingClient: SettingsClient? = null
@@ -100,8 +97,6 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
     private var mLocationRequest: LocationRequest? = null
     private var callFlag = false
 
-    //    private val CHECK_OP_NO_THROW = "checkOpNoThrow"
-//    private val OP_POST_NOTIFICATION = "OP_POST_NOTIFICATION"
     private lateinit var notificationManager: NotificationManager
 
     private var devicesName = ""
@@ -228,13 +223,6 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
 
             //adding more trusted contacts
             addMoreContacts.setOnClickListener {
-//                startService(
-//                    Intent(
-//                        this@MainActivity,
-//                        MotionDetectService::class.java
-//                    ).apply {
-//                        this.action = ACTION_STOP_SERVICE
-//                    })
 
                 startActivity(
                     Intent(
@@ -264,13 +252,6 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
             }
             navAddContacts.setOnClickListener {
 
-//                startService(
-//                    Intent(
-//                        this@MainActivity,
-//                        MotionDetectService::class.java
-//                    ).apply {
-//                        this.action = ACTION_STOP_SERVICE
-//                    })
 
                 startActivity(
                     Intent(
@@ -287,7 +268,25 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
     }
 
     //navigate to fragment if needed
-    private fun navigateToFramentIfNeeded() {
+    private fun navigateToFramentIfNeeded(personalinfoEntity: PersonalInfo_Entity) {
+        if(personalinfoEntity.status != "END"){
+            Log.d(TAG, "navigateToFramentIfNeeded: is called")
+            localDataBaseViewModel.addUserInfo(
+                PersonalInfo_Entity(
+                    0,
+                    personalinfoEntity.First_Name,
+                    personalinfoEntity.Last_Name,
+                    personalinfoEntity.Deactivate_Time,
+                    personalinfoEntity.Active_Time,
+                    personalinfoEntity.Subscription_Pack,
+                    personalinfoEntity.brought_pack_time,
+                    "END",
+                    personalinfoEntity.User_Email,
+                    personalinfoEntity.Image
+                )
+            )
+        }
+
 
         navHostFragment.findNavController().navigate(R.id.action_global_fragment)
 
@@ -555,36 +554,40 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
 
     ////////////////////////////////////////////////Services Section \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
     private fun serviceStart() {
-        trailCalculation2()
-    }
-
-    private fun checkTrialValue(remain: Int) {
-        if (remain == 0) {
-            Toast.makeText(this, "Your Package is Over", Toast.LENGTH_LONG).show()
-            navigateToFramentIfNeeded()
-        } else {
-            startService(Intent(this, MotionDetectService::class.java).apply {
-                this.action = ACTION_START_SERVICE
-            })
-        }
-    }
-
-    private fun trailCalculation2() {
-
         localDataBaseViewModel.realAllUserInfo.observe(this,{
-            startDateValue2 = simpleDateFormat.parse(simpleDateFormat.format(calendar.time))
-            endDateValue2 = simpleDateFormat.parse(it.Deactivate_Time)
-            val remain = (TimeUnit.DAYS.convert(
-                (endDateValue.time - startDateValue.time),
-                TimeUnit.MILLISECONDS
-            )).toString()
-            Log.d(TAG, "initViewModel: Time: " + Integer.parseInt(remain))
+            val time = trailCalculation(it.Deactivate_Time)
+            if (time == 0){
+                Toast.makeText(this, "Your Package is Over", Toast.LENGTH_LONG).show()
+                navigateToFramentIfNeeded(it)
+                localDataBaseViewModel.realAllUserInfo.removeObservers(this)
+            }else{
+                startService(Intent(this, MotionDetectService::class.java).apply {
+                    this.action = ACTION_START_SERVICE
+                })
+            }
 
-            checkTrialValue(Integer.parseInt(remain))
         })
 
 
+
+
     }
+
+
+    private fun trailCalculation(deactivatedTime:String): Int {
+
+        startDateValue2 = simpleDateFormat.parse(simpleDateFormat.format(calendar.time))
+        endDateValue2 = simpleDateFormat.parse(deactivatedTime)
+        val remain = (TimeUnit.DAYS.convert(
+            (endDateValue2.time - startDateValue2.time),
+            TimeUnit.MILLISECONDS
+        )).toString()
+        Log.d(TAG, "Trail Calculation: " + Integer.parseInt(remain))
+        return Integer.parseInt(remain)
+
+
+    }
+
 
 
 
@@ -1074,19 +1077,7 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
 
     ///////////////////////////////////end of permission/////////////////////////////
 
-    override fun onResume() {
-        super.onResume()
-        //      Log.d(TAG, "onResume: is called")
 
-//        internetDisposable = ReactiveNetwork.observeInternetConnectivity()
-//            .subscribeOn(Schedulers.io())
-//            .observeOn(AndroidSchedulers.mainThread())
-//            .subscribe { isConnectedToInternet ->
-//                isInternetConnected = isConnectedToInternet
-//            }
-
-
-    }
 
     override fun onPostResume() {
         if (Settings.canDrawOverlays(this)) {
@@ -1098,19 +1089,8 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
         super.onPostResume()
     }
 
-    //    override fun onPause() {
-//        super.onPause()
-//        safelyDispose(internetDisposable)
-//
-//    }
-//
-//    private fun safelyDispose(disposable: Disposable?) {
-//        if (disposable != null && !disposable.isDisposed) {
-//            disposable.dispose()
-//        }
-//    }
 
-    //--------NetWork-----------------//
+
 
 
     override fun onBackPressed() {

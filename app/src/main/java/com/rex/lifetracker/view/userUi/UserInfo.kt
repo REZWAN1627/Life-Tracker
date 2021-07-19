@@ -9,7 +9,6 @@ import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.lifecycleScope
 import coil.ImageLoader
 import coil.request.ImageRequest
 import coil.request.SuccessResult
@@ -17,10 +16,9 @@ import com.bumptech.glide.Glide
 import com.github.pwittchen.reactivenetwork.library.rx2.ReactiveNetwork
 import com.rex.lifetracker.R
 import com.rex.lifetracker.RoomDataBase.LocalDataBase_Entity.PersonalInfo_Entity
+import com.rex.lifetracker.RoomDataBase.LocalDataBase_Entity.SIM_Entity
 import com.rex.lifetracker.databinding.ActivityUserInfoBinding
 import com.rex.lifetracker.model.FireBaseModel.UserInfoModel
-import com.rex.lifetracker.RoomDataBase.LocalDataBase_Entity.SIM_Entity
-import com.rex.lifetracker.RoomDataBase.LocalDataBase_Entity.SOSContacts_Entity
 import com.rex.lifetracker.utils.Constant.TAG
 import com.rex.lifetracker.view.TrustedNumberDetails
 import com.rex.lifetracker.viewModel.LocalDataBaseVM.LocalDataBaseViewModel
@@ -36,6 +34,7 @@ import kotlinx.coroutines.*
 import java.io.ByteArrayOutputStream
 import java.text.SimpleDateFormat
 import java.util.*
+import java.util.concurrent.TimeUnit
 
 
 class UserInfo : AppCompatActivity() {
@@ -43,22 +42,23 @@ class UserInfo : AppCompatActivity() {
     private lateinit var signInViewModel: SignInViewModel
     private lateinit var userInfoViewModel: UserInfoViewModel
     private lateinit var trustedContactsViewModel: TrustedContactsViewModel
-    private  var After7DaysDate: String? = null
-    private  var currentDate: String? = null
-    private  var currentDate2: String? = null
+    private var After7DaysDate: String? = null
+    private var currentDate: String? = null
+    private var currentDate2: String? = null
     private val calendar = Calendar.getInstance()
     private val simpleDateFormat = SimpleDateFormat("dd.MM.yyyy")
     private val simpleDateFormat2 = SimpleDateFormat("EEE, d MMM -HH:mm")
     private lateinit var localDataBaseViewModel: LocalDataBaseViewModel
-    private var globalEmail : String = "null"
+    private var globalEmail: String = "null"
     private var globalImage: String = "null"
     private var subsPack: String = "Trail Version"
-    private var broughtPack : String = "null"
+    private var broughtPack: String = "null"
     private var status: String = "On going"
     private var isInternetConnected = false
     private var internetDisposable: Disposable? = null
     private lateinit var simSlotViewModel: SimSlotViewModel
-
+    private lateinit var startDateValue2: Date
+    private lateinit var endDateValue2: Date
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -71,7 +71,7 @@ class UserInfo : AppCompatActivity() {
         formattingDate()
         setInfo()
         simSlot()
-       // populateDataBase()
+        // populateDataBase()
 
         // showDialog()
 
@@ -87,14 +87,14 @@ class UserInfo : AppCompatActivity() {
                     return@setOnClickListener
                 } else {
 
-                    if (isInternetConnected){
+                    if (isInternetConnected) {
                         insertValue(
                             userFirstName.text.toString(),
                             userLastName.text.toString(),
 
                             )
                         Log.d(TAG, "getInfo: " + userLastName.text)
-                    }else{
+                    } else {
                         Toast.makeText(
                             this@UserInfo,
                             "You need Internet Connect",
@@ -111,14 +111,14 @@ class UserInfo : AppCompatActivity() {
     }
 
     private fun simSlot() {
-        simSlotViewModel.getSelectedSimSlot.observe(this,{sim->
-            if (sim != null){
+        simSlotViewModel.getSelectedSimSlot.observe(this, { sim ->
+            if (sim != null) {
                 localDataBaseViewModel.addSIMSlot(
                     SIM_Entity(
                         0, sim.SELECTED_SIM_SLOT
                     )
                 )
-            }else{
+            } else {
                 localDataBaseViewModel.addSIMSlot(
                     SIM_Entity(
                         0, "0"
@@ -167,49 +167,50 @@ class UserInfo : AppCompatActivity() {
                 .setCancelable(true).build()
         dialogue?.show()
 
-            signInViewModel.collectUserInfoLiveData.observe(this, {
-                globalEmail = it.email
-                userInfoViewModel.getUserInfoLiveData.observe(this,{user->
-                    if (user!=null){
-                        Log.d(TAG, "setInfo: all user info $user")
-                        dialogue?.dismiss()
-                        binding.apply {
-                            userFirstName.setText(user.first_Name)
-                            userLastName.setText(user.last_Name)
-                            globalImage = user.avatar_image
-                            subsPack = user.subscription_pack.toString()
-                            After7DaysDate = user.deactivate_Time
-                            broughtPack = user.brought_pack_time.toString()
-                            status = user.status.toString()
-                            currentDate = user.active_Time
-                            binding.apply {
-                                userGmail.text = it.email
-                                Glide.with(this@UserInfo).load(globalImage)
-                                    .centerCrop()
-                                    .placeholder(R.drawable.ic_team)
-                                    .into(UserImage)
-
-                            }
-
+        signInViewModel.collectUserInfoLiveData.observe(this, {
+            globalEmail = it.email
+            userInfoViewModel.getUserInfoLiveData.observe(this, { user ->
+                if (user != null) {
+                    Log.d(TAG, "setInfo: all user info $user")
+                    dialogue?.dismiss()
+                    binding.apply {
+                        userFirstName.setText(user.first_Name)
+                        userLastName.setText(user.last_Name)
+                        globalImage = user.avatar_image
+                        subsPack = user.subscription_pack.toString()
+                        After7DaysDate = user.deactivate_Time
+                        broughtPack = user.brought_pack_time.toString()
+                        val time = trailCalculation(user.deactivate_Time)
+                        status = if (time == 0){
+                            "END"
+                        }else{
+                            user.status.toString()
                         }
-                    }else{
-                        dialogue?.dismiss()
-                        After7DaysDate = simpleDateFormat.format(calendar.time)
-                        globalImage = it.imageUrl
-                        globalEmail = it.email
-                        binding.apply {
-                            userGmail.text = it.email
-                            Glide.with(this@UserInfo).load(it.imageUrl)
-                                .centerCrop()
-                                .placeholder(R.drawable.ic_team)
-                                .into(UserImage)
+                        currentDate = user.active_Time
+                        userGmail.text = it.email
+                        Glide.with(this@UserInfo).load(globalImage)
+                            .centerCrop()
+                            .placeholder(R.drawable.ic_team)
+                            .into(UserImage)
 
-                        }
+
                     }
-                })
+                } else {
+                    dialogue?.dismiss()
+                    After7DaysDate = simpleDateFormat.format(calendar.time)
+                    globalImage = it.imageUrl
+                    globalEmail = it.email
+                    binding.apply {
+                        userGmail.text = it.email
+                        Glide.with(this@UserInfo).load(it.imageUrl)
+                            .centerCrop()
+                            .placeholder(R.drawable.ic_team)
+                            .into(UserImage)
+
+                    }
+                }
             })
-
-
+        })
 
 
     }
@@ -312,7 +313,18 @@ class UserInfo : AppCompatActivity() {
     }
 
 
+    private fun trailCalculation(deactivatedTime: String): Int {
+        startDateValue2 = simpleDateFormat.parse(simpleDateFormat.format(Calendar.getInstance().time))
+        endDateValue2 = simpleDateFormat.parse(deactivatedTime)
+        val remain = (TimeUnit.DAYS.convert(
+            (endDateValue2.time - startDateValue2.time),
+            TimeUnit.MILLISECONDS
+        )).toString()
+        Log.e(TAG, "Trail Calculation: " + Integer.parseInt(remain))
+        return Integer.parseInt(remain)
 
+
+    }
 
 
 }

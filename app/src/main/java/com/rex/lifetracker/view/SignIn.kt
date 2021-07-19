@@ -22,8 +22,6 @@ import com.rex.lifetracker.utils.Constant.TAG
 import com.rex.lifetracker.view.userUi.UserInfo
 import com.rex.lifetracker.viewModel.LocalDataBaseVM.LocalDataBaseViewModel
 import com.rex.lifetracker.viewModel.firebaseViewModel.SignInViewModel
-import com.rex.lifetracker.viewModel.firebaseViewModel.TrustedContactsViewModel
-import com.rex.lifetracker.viewModel.firebaseViewModel.UserInfoViewModel
 import dmax.dialog.SpotsDialog
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.Disposable
@@ -34,8 +32,6 @@ class SignIn : AppCompatActivity() {
     private lateinit var binding: ActivitySignInBinding
     private lateinit var signInViewModel: SignInViewModel
     private lateinit var googleSignInClient: GoogleSignInClient
-    private lateinit var userInfoViewModel: UserInfoViewModel
-    private lateinit var trustedContactsViewModel: TrustedContactsViewModel
     private var isInternetConnected = false
     private var internetDisposable: Disposable? = null
     private lateinit var localDataBaseViewModel: LocalDataBaseViewModel

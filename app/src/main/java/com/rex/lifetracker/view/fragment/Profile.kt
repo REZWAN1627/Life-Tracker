@@ -46,16 +46,22 @@ class Profile : Fragment(R.layout.fragment_profile), EasyPermissions.PermissionC
         initViewModel()
         setValue()
 
-        val callback: OnBackPressedCallback =
-            object : OnBackPressedCallback(true) {
-                override fun handleOnBackPressed() {
-                    findNavController().navigate(R.id.mapsFragment)
-                }
-            }
+
         requireActivity().onBackPressedDispatcher.addCallback(requireActivity(), callback)
 
 
     }
+
+    private val callback: OnBackPressedCallback =
+        object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                try {
+                    findNavController()?.navigate(R.id.mapsFragment)
+                }catch (e:Exception){
+                    Log.d(Constant.TAG, "handleOnBackPressed: $e")
+                }
+            }
+        }
 
     private fun setValue() {
         binding.apply {
@@ -255,5 +261,10 @@ class Profile : Fragment(R.layout.fragment_profile), EasyPermissions.PermissionC
         return (result as BitmapDrawable).bitmap
     }
 
-
+    override fun onDestroyView() {
+        Log.d(Constant.TAG, "onDestroyView: is called")
+        callback.isEnabled = false
+        callback.remove()
+        super.onDestroyView()
+    }
 }
