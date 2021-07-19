@@ -9,7 +9,7 @@ import com.rex.lifetracker.RoomDataBase.LocalDataBase
 import com.rex.lifetracker.RoomDataBase.LocalDataBase_Entity.PersonalInfo_Entity
 import com.rex.lifetracker.RoomDataBase.LocalDataBase_Entity.SIM_Entity
 import com.rex.lifetracker.RoomDataBase.LocalDataBase_Entity.SOSContacts_Entity
-import com.rex.lifetracker.RoomDataBase.LocalDataBase_Entity.deleteContactsCacheModel
+import com.rex.lifetracker.RoomDataBase.LocalDataBase_Entity.DeleteContactsCacheModel
 import com.rex.lifetracker.repository.LocalDataBaseRepo.LocalDataBaseRepository
 import com.rex.lifetracker.utils.Constant.TAG
 import kotlinx.coroutines.Dispatchers
@@ -19,7 +19,7 @@ class LocalDataBaseViewModel(application: Application) : AndroidViewModel(applic
     val readAllContacts: LiveData<List<SOSContacts_Entity>>
     val realAllUserInfo: LiveData<PersonalInfo_Entity>
     val readAllSIMSlot: LiveData<List<SIM_Entity>>
-    val readAllCache: LiveData<List<deleteContactsCacheModel>>
+    val readAllCache: LiveData<List<DeleteContactsCacheModel>>
     private val databaseRepository: LocalDataBaseRepository
 
     init {
@@ -54,11 +54,11 @@ class LocalDataBaseViewModel(application: Application) : AndroidViewModel(applic
         }
     }
 
-    fun addCache(deleteContactsCacheModel: deleteContactsCacheModel) {
+    fun addCache(DeleteContactsCacheModel: DeleteContactsCacheModel) {
         Log.d(TAG, "Cache")
         viewModelScope.launch(Dispatchers.IO) {
 
-            databaseRepository.addCache(deleteContactsCacheModel)
+            databaseRepository.addCache(DeleteContactsCacheModel)
         }
     }
 
@@ -106,11 +106,11 @@ class LocalDataBaseViewModel(application: Application) : AndroidViewModel(applic
         }
     }
 
-    fun deleteCache(deleteContactsCacheModel: deleteContactsCacheModel) {
+    fun deleteCache(DeleteContactsCacheModel: DeleteContactsCacheModel) {
         Log.d(TAG, "Cache")
         viewModelScope.launch(Dispatchers.IO) {
 
-            databaseRepository.deleteCache(deleteContactsCacheModel)
+            databaseRepository.deleteCache(DeleteContactsCacheModel)
         }
     }
 

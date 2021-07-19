@@ -69,16 +69,25 @@ class Splash : AppCompatActivity() {
 
                 }, 1000)
             } else {
-                Handler(Looper.getMainLooper()).postDelayed({
-                    startActivity(
-                        Intent(
-                            this,
-                            MainActivity::class.java
-                        ).putExtra("Service", "NO")
-                    )
-                    finish()
+                if (list.size > 1){
+                    Handler(Looper.getMainLooper()).postDelayed({
+                        startActivity(
+                            Intent(
+                                this,
+                                MainActivity::class.java
+                            ).putExtra("Service", "NO")
+                        )
+                        finish()
 
-                }, 1000)
+                    }, 1000)
+                }else{
+                    Handler(Looper.getMainLooper()).postDelayed({
+                        startActivity(Intent(this, SignIn::class.java).putExtra("Nuke", "NO"))
+                        finish()
+
+                    }, 1000)
+                }
+
             }
         })
 
@@ -132,16 +141,29 @@ class Splash : AppCompatActivity() {
                                     }, 1000)
 
                                 } else {
-                                    Handler(Looper.getMainLooper()).postDelayed({
-                                        startActivity(
-                                            Intent(
-                                                this,
-                                                MainActivity::class.java
-                                            ).putExtra("Service", "NO")
-                                        )
-                                        finish()
+                                    if (list.size > 1){
+                                        Handler(Looper.getMainLooper()).postDelayed({
+                                            startActivity(
+                                                Intent(
+                                                    this,
+                                                    MainActivity::class.java
+                                                ).putExtra("Service", "NO")
+                                            )
+                                            finish()
 
-                                    }, 1000)
+                                        }, 1000)
+                                    }else{
+                                        Handler(Looper.getMainLooper()).postDelayed({
+                                            startActivity(
+                                                Intent(
+                                                    this,
+                                                    SignIn::class.java
+                                                ).putExtra("Nuke", "NO")
+                                            )
+                                            finish()
+
+                                        }, 1000)
+                                    }
 
                                 }
                             })

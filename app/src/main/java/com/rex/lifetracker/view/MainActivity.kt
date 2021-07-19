@@ -88,7 +88,7 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
     private lateinit var userActiveTime: String
     private var menuGlob:MenuItem? =null
 
-    private var packageOrTrileOver = false
+
 
     //    private var isInternetConnected = false
 //    private var internetDisposable: Disposable? = null

@@ -5,7 +5,7 @@ import androidx.room.*
 import com.rex.lifetracker.RoomDataBase.LocalDataBase_Entity.PersonalInfo_Entity
 import com.rex.lifetracker.RoomDataBase.LocalDataBase_Entity.SIM_Entity
 import com.rex.lifetracker.RoomDataBase.LocalDataBase_Entity.SOSContacts_Entity
-import com.rex.lifetracker.RoomDataBase.LocalDataBase_Entity.deleteContactsCacheModel
+import com.rex.lifetracker.RoomDataBase.LocalDataBase_Entity.DeleteContactsCacheModel
 
 @Dao
 interface LocalDataBaseDao {
@@ -19,7 +19,7 @@ interface LocalDataBaseDao {
     suspend fun addSIMSlot(simEntity: SIM_Entity)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun addCache(deleteContactsCacheModel: deleteContactsCacheModel)
+    suspend fun addCache(DeleteContactsCacheModel: DeleteContactsCacheModel)
 
     @Update
     suspend fun updateContacts(SOSContactsEntity: SOSContacts_Entity)
@@ -40,7 +40,7 @@ interface LocalDataBaseDao {
     suspend fun deleteSIMSlot(simEntity: SIM_Entity)
 
     @Delete
-    suspend fun deleteCache(deleteContactsCacheModel: deleteContactsCacheModel)
+    suspend fun deleteCache(DeleteContactsCacheModel: DeleteContactsCacheModel)
 
     @Query("SELECT * FROM user_trusted_contacts")
     fun readAllContacts(): LiveData<List<SOSContacts_Entity>>
@@ -52,7 +52,7 @@ interface LocalDataBaseDao {
     fun readAllSIMSlot(): LiveData<List<SIM_Entity>>
 
     @Query("SELECT * FROM deleteCache")
-    fun readAllCache(): LiveData<List<deleteContactsCacheModel>>
+    fun readAllCache(): LiveData<List<DeleteContactsCacheModel>>
 
 
 

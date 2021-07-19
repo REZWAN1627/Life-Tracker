@@ -29,7 +29,7 @@ class Promotion : Fragment(R.layout.fragment_promotion) {
     }
 
     private fun setValue() {
-        appsInformationViewModel.getAppsInformationLiveData?.observe(viewLifecycleOwner, {apps ->
+        appsInformationViewModel.getAppsInformationLiveData.observe(viewLifecycleOwner, {apps ->
 
                 if (apps!=null){
                     oneMonthPlane(apps.oneMonthPackModel)
@@ -43,21 +43,21 @@ class Promotion : Fragment(R.layout.fragment_promotion) {
     private fun twelveMonthPlan(twelveMonthPackModel: Twelve_Month_Pack_Model?) {
         binding.apply {
             twelveMonthPlan.text = twelveMonthPackModel?.days + " Days Plan"
-            twelveMonthPlanCost.text ="$"+twelveMonthPackModel?.cost
+            twelveMonthPlanCost.text ="BDT "+twelveMonthPackModel?.cost
         }
     }
 
     private fun sixMonthPlane(sixMonthPackModel: Six_Month_Pack_Model?) {
         binding.apply {
             sixMonthDays.text = sixMonthPackModel?.days + " Days Plan"
-            sixMonthPlanCost.text = "$"+sixMonthPackModel?.cost
+            sixMonthPlanCost.text = "BDT "+sixMonthPackModel?.cost
         }
     }
 
     private fun oneMonthPlane(oneMonthPackModel: One_Month_Pack_Model?) {
         binding.apply {
             oneMonth.text = oneMonthPackModel?.days + " Days Plan"
-            oneMonthCost.text = "$"+oneMonthPackModel?.cost
+            oneMonthCost.text = "BDT "+oneMonthPackModel?.cost
 
         }
     }

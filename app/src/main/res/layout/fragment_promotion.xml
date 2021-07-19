@@ -86,7 +86,7 @@
                 android:id="@+id/oneMonthCost"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="$100"
+                tools:text="BDT "
                 android:textColor="@color/money"
                 android:textSize="@dimen/_16ssp"
                 android:textStyle="bold" />
@@ -174,7 +174,7 @@
                 android:id="@+id/sixMonthPlanCost"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="$100"
+                tools:text="BDT "
                 android:textColor="@color/money"
                 android:textSize="@dimen/_16ssp"
                 android:textStyle="bold" />
@@ -262,7 +262,7 @@
                 android:id="@+id/twelveMonthPlanCost"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="$100"
+                tools:text="BDT "
                 android:textColor="@color/money"
                 android:textSize="@dimen/_16ssp"
                 android:textStyle="bold" />

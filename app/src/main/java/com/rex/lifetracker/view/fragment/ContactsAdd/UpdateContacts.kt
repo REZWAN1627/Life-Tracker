@@ -27,7 +27,7 @@ import coil.request.SuccessResult
 import com.bumptech.glide.Glide
 import com.rex.lifetracker.R
 import com.rex.lifetracker.RoomDataBase.LocalDataBase_Entity.SOSContacts_Entity
-import com.rex.lifetracker.RoomDataBase.LocalDataBase_Entity.deleteContactsCacheModel
+import com.rex.lifetracker.RoomDataBase.LocalDataBase_Entity.DeleteContactsCacheModel
 import com.rex.lifetracker.databinding.FragmentUpdateContactsBinding
 import com.rex.lifetracker.utils.Constant
 import com.rex.lifetracker.utils.Constant.TAG
@@ -96,7 +96,7 @@ class UpdateContacts : Fragment(R.layout.fragment_update_contacts),
                                 )
                             )
                             localDataBaseViewModel.addCache(
-                                deleteContactsCacheModel(
+                                DeleteContactsCacheModel(
                                     args.localData.Phone
                                 )
                             )
@@ -119,7 +119,7 @@ class UpdateContacts : Fragment(R.layout.fragment_update_contacts),
                             findNavController().navigate(R.id.action_updateContacts_to_listContacts)
                         } else {
                             localDataBaseViewModel.addCache(
-                                deleteContactsCacheModel(
+                                DeleteContactsCacheModel(
                                     args.localData.Phone
                                 )
                             )

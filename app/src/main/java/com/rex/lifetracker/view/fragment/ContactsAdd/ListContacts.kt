@@ -4,6 +4,7 @@ package com.rex.lifetracker.view.fragment.ContactsAdd
 import android.app.Dialog
 import android.content.Intent
 import android.graphics.Bitmap
+import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.ColorDrawable
@@ -25,11 +26,12 @@ import coil.ImageLoader
 import coil.request.ImageRequest
 import coil.request.SuccessResult
 import com.github.pwittchen.reactivenetwork.library.rx2.ReactiveNetwork
+import com.google.android.material.snackbar.Snackbar
 import com.rex.lifetracker.R
+import com.rex.lifetracker.RoomDataBase.LocalDataBase_Entity.DeleteContactsCacheModel
+import com.rex.lifetracker.RoomDataBase.LocalDataBase_Entity.SOSContacts_Entity
 import com.rex.lifetracker.adapter.RecyclerAdapterTrustedContacts
 import com.rex.lifetracker.databinding.FragmentListContactsBinding
-import com.rex.lifetracker.RoomDataBase.LocalDataBase_Entity.SOSContacts_Entity
-import com.rex.lifetracker.RoomDataBase.LocalDataBase_Entity.deleteContactsCacheModel
 import com.rex.lifetracker.utils.Constant.TAG
 import com.rex.lifetracker.view.ManageTrustedContactsList
 import com.rex.lifetracker.viewModel.LocalDataBaseVM.LocalDataBaseViewModel
@@ -56,10 +58,9 @@ class ListContacts : Fragment(R.layout.fragment_list_contacts) {
 
     private var internetDisposable: Disposable? = null
     private var isInternetConnected = false
-    private var noNeedToUpload = false
-    private var totalsizeOnline = 0
-    private var totalsizeOfflinebefore = 0
-    private var totalsizeOfflineAfter = 0
+    private var totalSizeOnline = 0
+    private var totalSizeOfflineBefore = 0
+    private lateinit var data: SOSContacts_Entity
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
@@ -145,7 +146,7 @@ class ListContacts : Fragment(R.layout.fragment_list_contacts) {
 
     //-----------------------------------back ground thread--------------------//
     private fun uploadDataToFireBase(
-        deletelist: List<deleteContactsCacheModel>,
+        deletelist: List<DeleteContactsCacheModel>,
         NumberList: List<SOSContacts_Entity>
     ) {
         val mainJob = CoroutineScope(IO).launch {
@@ -155,7 +156,7 @@ class ListContacts : Fragment(R.layout.fragment_list_contacts) {
                     for (path in deletelist) {
                         trustedContactsViewModel.deleteContact(path.deleteNumber)
                         localDataBaseViewModel.deleteCache(
-                            deleteContactsCacheModel(
+                            DeleteContactsCacheModel(
                                 path.deleteNumber
                             )
                         )
@@ -200,7 +201,7 @@ class ListContacts : Fragment(R.layout.fragment_list_contacts) {
                 Log.d(TAG, "onViewCreated: ${it.size}")
                 contactExceed = it.size >= 5
                 contactLessThan = it.size <= 1
-                totalsizeOfflinebefore = it.size
+                totalSizeOfflineBefore = it.size
                 emptyList = it.isEmpty()
                 mAdapter.setValue(it)
 
@@ -271,21 +272,14 @@ class ListContacts : Fragment(R.layout.fragment_list_contacts) {
             when (direction) {
                 ItemTouchHelper.LEFT -> {
 
-                    val data = mAdapter.deleteItem(viewHolder.adapterPosition)
+                    data = mAdapter.deleteItem(viewHolder.adapterPosition)
                     localDataBaseViewModel.addCache(
-                        deleteContactsCacheModel(
+                        DeleteContactsCacheModel(
                             data.Phone
                         )
                     )
 
-                    localDataBaseViewModel.deleteContacts(
-                        SOSContacts_Entity(
-                            data.Phone,
-                            data.Priority,
-                            data.Name,
-                            data.Image
-                        )
-                    )
+                    localDataBaseViewModel.deleteContacts(data)
 
 
                     mAdapter.notifyItemRemoved(viewHolder.adapterPosition)
@@ -303,6 +297,29 @@ class ListContacts : Fragment(R.layout.fragment_list_contacts) {
                         mAdapter.setValue(it)
 
                     })
+
+                    Snackbar.make(binding.allAddedContacts, "This Contacts is deleted "+data.Phone, Snackbar.LENGTH_LONG)
+                        .setAction("Undo") {
+                            localDataBaseViewModel.addContacts(data)
+                            mAdapter.notifyItemInserted(viewHolder.adapterPosition)
+                            localDataBaseViewModel.deleteCache(
+                                DeleteContactsCacheModel(
+                                    data.Phone
+                                )
+                            )
+                            localDataBaseViewModel?.readAllContacts?.observe(
+                                viewLifecycleOwner,
+                                {
+                                    Log.d(TAG, "onSwiped: current size after delete " + it.size)
+                                    contactExceed = it.size >= 5
+                                    contactLessThan = it.size <= 1
+                                    emptyList = it.isEmpty()
+
+                                    dialogue.dismiss()
+                                    mAdapter.setValue(it)
+
+                                })
+                        }.show()
                 }
 
 
@@ -310,7 +327,6 @@ class ListContacts : Fragment(R.layout.fragment_list_contacts) {
 
 
         }
-
 
     }
 
@@ -325,51 +341,51 @@ class ListContacts : Fragment(R.layout.fragment_list_contacts) {
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe { isConnectedToInternet ->
                 isInternetConnected = isConnectedToInternet
-                 if (isConnectedToInternet) {
-                     localDataBaseViewModel.readAllContacts?.observe(viewLifecycleOwner, {
-                         if (it.isEmpty()) {
-                             trustedContactsViewModel.getContactsLiveData?.observe(
-                                 viewLifecycleOwner,
-                                 { onlineList ->
-                                     Log.d(TAG, "onViewCreated online : ${onlineList.size}")
-                                     // Log.d(TAG, "onResume: :${onlineList[0].Image}")
-                                     if (onlineList.isNotEmpty()) {
-                                         totalsizeOnline = onlineList.size
+                if (isConnectedToInternet) {
+                    localDataBaseViewModel.readAllContacts.observe(viewLifecycleOwner, {
+                        if (it.isEmpty()) {
+                            trustedContactsViewModel.getContactsLiveData.observe(
+                                viewLifecycleOwner,
+                                { onlineList ->
+                                    Log.d(TAG, "onViewCreated online : ${onlineList.size}")
+                                    // Log.d(TAG, "onResume: :${onlineList[0].Image}")
+                                    if (onlineList.isNotEmpty()) {
+                                        totalSizeOnline = onlineList.size
 
-                                         lifecycleScope.launch {
-                                             val dialogue =
-                                                 SpotsDialog.Builder().setContext(requireContext())
-                                                     .setTheme(R.style.Custom)
-                                                     .setCancelable(true).build()
-                                             dialogue?.show()
-                                             for ((i, model) in onlineList.withIndex()) {
-                                                 val image = getBitmap(model.Image)
-                                                 localDataBaseViewModel.addContacts(
-                                                     SOSContacts_Entity(
-                                                         model.Phone,
-                                                         model.Priority,
-                                                         model.Name,
-                                                         image
-                                                     )
-                                                 )
-
-
-                                             }
-                                             dialogue?.dismiss()
-                                         }
-                                     }
+                                        lifecycleScope.launch {
+                                            val dialogue =
+                                                SpotsDialog.Builder().setContext(requireContext())
+                                                    .setTheme(R.style.Custom)
+                                                    .setCancelable(true).build()
+                                            dialogue?.show()
+                                            for ((i, model) in onlineList.withIndex()) {
+                                                val image = getBitmap(model.Image)
+                                                localDataBaseViewModel.addContacts(
+                                                    SOSContacts_Entity(
+                                                        model.Phone,
+                                                        model.Priority,
+                                                        model.Name,
+                                                        image
+                                                    )
+                                                )
 
 
-                                 })
+                                            }
+                                            dialogue?.dismiss()
+                                        }
+                                    }
 
 
-                         } else {
+                                })
 
-                         }
-                     })
-                 } else {
-                     Log.d(TAG, "onResume: no internet")
-                 }
+
+                        } else {
+
+                        }
+                    })
+                } else {
+                    Log.d(TAG, "onResume: no internet")
+                }
             }
     }
 

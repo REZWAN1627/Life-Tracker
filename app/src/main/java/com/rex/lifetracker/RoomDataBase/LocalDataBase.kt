@@ -8,7 +8,7 @@ import androidx.room.TypeConverters
 import com.rex.lifetracker.RoomDataBase.LocalDataBase_Entity.PersonalInfo_Entity
 import com.rex.lifetracker.RoomDataBase.LocalDataBase_Entity.SIM_Entity
 import com.rex.lifetracker.RoomDataBase.LocalDataBase_Entity.SOSContacts_Entity
-import com.rex.lifetracker.RoomDataBase.LocalDataBase_Entity.deleteContactsCacheModel
+import com.rex.lifetracker.RoomDataBase.LocalDataBase_Entity.DeleteContactsCacheModel
 import com.rex.lifetracker.utils.Converters
 
 
@@ -16,7 +16,7 @@ import com.rex.lifetracker.utils.Converters
     entities = [SOSContacts_Entity::class,
         PersonalInfo_Entity::class,
         SIM_Entity::class,
-        deleteContactsCacheModel::class], version = 1, exportSchema = false
+        DeleteContactsCacheModel::class], version = 1, exportSchema = false
 )
 @TypeConverters(Converters::class)
 abstract class LocalDataBase : RoomDatabase() {

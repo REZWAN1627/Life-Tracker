@@ -20,7 +20,7 @@ class AppsInformationRepository {
         Firebase.firestore.collection("admin")
 
 
-    fun getAppsInformation(): MutableLiveData<AppsAdminModel?> {
+    fun  getAppsInformation(): MutableLiveData<AppsAdminModel?> {
         val currentUser = firebaseAuth.currentUser!!.uid
         Log.d(TAG, "getAppsInformation: $currentUser")
         val getFireStoreMutableLiveData: MutableLiveData<AppsAdminModel?> =

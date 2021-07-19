@@ -5,14 +5,14 @@ import com.rex.lifetracker.RoomDataBase.LocalDataBaseDao
 import com.rex.lifetracker.RoomDataBase.LocalDataBase_Entity.PersonalInfo_Entity
 import com.rex.lifetracker.RoomDataBase.LocalDataBase_Entity.SIM_Entity
 import com.rex.lifetracker.RoomDataBase.LocalDataBase_Entity.SOSContacts_Entity
-import com.rex.lifetracker.RoomDataBase.LocalDataBase_Entity.deleteContactsCacheModel
+import com.rex.lifetracker.RoomDataBase.LocalDataBase_Entity.DeleteContactsCacheModel
 
 class LocalDataBaseRepository(private val localDataBaseDao: LocalDataBaseDao) {
 
     val readAllContacts: LiveData<List<SOSContacts_Entity>> = localDataBaseDao.readAllContacts()
     val readAllUserInfo: LiveData<PersonalInfo_Entity> = localDataBaseDao.readAllUserInfo()
     val readAllSIMSlot: LiveData<List<SIM_Entity>> = localDataBaseDao.readAllSIMSlot()
-    val readAllCache: LiveData<List<deleteContactsCacheModel>> = localDataBaseDao.readAllCache()
+    val readAllCache: LiveData<List<DeleteContactsCacheModel>> = localDataBaseDao.readAllCache()
 
     suspend fun addContacts(SOSContactsEntity: SOSContacts_Entity) {
         localDataBaseDao.addContacts(SOSContactsEntity)
@@ -23,8 +23,8 @@ class LocalDataBaseRepository(private val localDataBaseDao: LocalDataBaseDao) {
     suspend fun addSIMSlot(simEntity: SIM_Entity) {
         localDataBaseDao.addSIMSlot(simEntity)
     }
-    suspend fun addCache(deleteContactsCacheModel: deleteContactsCacheModel) {
-        localDataBaseDao.addCache(deleteContactsCacheModel)
+    suspend fun addCache(DeleteContactsCacheModel: DeleteContactsCacheModel) {
+        localDataBaseDao.addCache(DeleteContactsCacheModel)
     }
 
     suspend fun updateContacts(SOSContactsEntity: SOSContacts_Entity) {
@@ -47,8 +47,8 @@ class LocalDataBaseRepository(private val localDataBaseDao: LocalDataBaseDao) {
         localDataBaseDao.deleteSIMSlot(simEntity)
     }
 
-    suspend fun deleteCache(deleteContactsCacheModel: deleteContactsCacheModel){
-        localDataBaseDao.deleteCache(deleteContactsCacheModel)
+    suspend fun deleteCache(DeleteContactsCacheModel: DeleteContactsCacheModel){
+        localDataBaseDao.deleteCache(DeleteContactsCacheModel)
     }
 
     suspend fun nukeTable(){

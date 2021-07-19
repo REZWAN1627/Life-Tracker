@@ -5,7 +5,7 @@ import androidx.room.Index
 import androidx.room.PrimaryKey
 
 @Entity(tableName = "deleteCache", indices = [Index(value = ["deleteNumber"],unique = true)])
-data class deleteContactsCacheModel(
+data class DeleteContactsCacheModel(
 
     @PrimaryKey(autoGenerate = false)
     val deleteNumber:String
