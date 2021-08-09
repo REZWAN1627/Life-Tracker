@@ -556,7 +556,7 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
     private fun serviceStart() {
         localDataBaseViewModel.realAllUserInfo.observe(this,{
             val time = trailCalculation(it.Deactivate_Time)
-            if (time == 0){
+            if (time <= 0){
                 Toast.makeText(this, "Your Package is Over", Toast.LENGTH_LONG).show()
                 navigateToFramentIfNeeded(it)
                 localDataBaseViewModel.realAllUserInfo.removeObservers(this)

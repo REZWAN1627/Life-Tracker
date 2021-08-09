@@ -181,7 +181,7 @@ class UserInfo : AppCompatActivity() {
                         After7DaysDate = user.deactivate_Time
                         broughtPack = user.brought_pack_time.toString()
                         val time = trailCalculation(user.deactivate_Time)
-                        status = if (time == 0){
+                        status = if (time <= 0){
                             "END"
                         }else{
                             user.status.toString()
