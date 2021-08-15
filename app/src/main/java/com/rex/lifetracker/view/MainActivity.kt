@@ -108,7 +108,7 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        Log.d(TAG, "onCreate: ${android.os.Build.MANUFACTURER}")
+        Log.d(TAG, "onCreate: ${Build.MANUFACTURER}")
 
         requestPermission()
         initViewModel()
@@ -120,6 +120,10 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
 
 //------------------------------------binding----------------------------------------//
         binding.apply {
+
+            emergencyButton.setOnClickListener {
+                startActivity(Intent(this@MainActivity,LocalAreaEmergency::class.java))
+            }
 
             //GPS Broad Cast Receiver
             GpsLocationReceiver.GPSEnable.observe(this@MainActivity, {
@@ -141,6 +145,7 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
             menuGlob = menu
                 when (menu.itemId) {
                     R.id.notification -> {
+                        binding.emergencyButton.visibility = View.GONE
                         BottomSheetBehavior.from(bottomSheet).state =
                             BottomSheetBehavior.STATE_HIDDEN
                         return@setOnItemSelectedListener NavigationUI.onNavDestinationSelected(
@@ -149,6 +154,7 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
                         )
                     }
                     R.id.mapsFragment -> {
+                        binding.emergencyButton.visibility = View.VISIBLE
                         BottomSheetBehavior.from(bottomSheet).state =
                             BottomSheetBehavior.STATE_COLLAPSED
                         return@setOnItemSelectedListener NavigationUI.onNavDestinationSelected(
@@ -157,6 +163,7 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
                         )
                     }
                     else -> {
+                        binding.emergencyButton.visibility = View.GONE
                         BottomSheetBehavior.from(bottomSheet).state =
                             BottomSheetBehavior.STATE_HIDDEN
                         return@setOnItemSelectedListener NavigationUI.onNavDestinationSelected(
@@ -268,7 +275,8 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
     }
 
     //navigate to fragment if needed
-    private fun navigateToFramentIfNeeded(personalinfoEntity: PersonalInfo_Entity) {
+    private fun navigateToFragmentIfNeeded(personalinfoEntity: PersonalInfo_Entity) {
+        binding.emergencyButton.visibility = View.GONE
         if(personalinfoEntity.status != "END"){
             Log.d(TAG, "navigateToFramentIfNeeded: is called")
             localDataBaseViewModel.addUserInfo(
@@ -456,7 +464,7 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
         dialog.setCancelable(false)
         dialog.setContentView(R.layout.sim_select_dialog)
-        dialog.window?.setBackgroundDrawable(ColorDrawable(android.graphics.Color.WHITE))
+        dialog.window?.setBackgroundDrawable(ColorDrawable(Color.WHITE))
         val cancel = dialog.findViewById<Button>(R.id.cancelDialog)
         val ok = dialog.findViewById<Button>(R.id.okDialog)
         val sim1Check = dialog.findViewById<RadioButton>(R.id.sim1)
@@ -558,7 +566,7 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
             val time = trailCalculation(it.Deactivate_Time)
             if (time <= 0){
                 Toast.makeText(this, "Your Package is Over", Toast.LENGTH_LONG).show()
-                navigateToFramentIfNeeded(it)
+                navigateToFragmentIfNeeded(it)
                 localDataBaseViewModel.realAllUserInfo.removeObservers(this)
             }else{
                 startService(Intent(this, MotionDetectService::class.java).apply {
@@ -683,7 +691,7 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
                     //          Log.d(TAG, "requestPermission: exception $e")
                 }
             } else {
-                if ((ex as ApiException).statusCode == LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE) {
+                if (ex.statusCode == LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE) {
                     Toast.makeText(
                         this,
                         "GPS Enable Cannot be fixed here\nFix in Settings",
@@ -764,7 +772,7 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
                                     //                     Log.d(TAG, "requestPermission: exception $e")
                                 }
                             } else {
-                                if ((ex as ApiException).statusCode == LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE) {
+                                if (ex.statusCode == LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE) {
                                     Toast.makeText(
                                         this,
                                         "GPS Enable Cannot be fixed here\nFix in Settings",
@@ -1034,7 +1042,7 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
                                 //                       Log.d(TAG, "requestPermission: exception $e")
                             }
                         } else {
-                            if ((ex as ApiException).statusCode == LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE) {
+                            if (ex.statusCode == LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE) {
                                 Toast.makeText(
                                     this,
                                     "GPS Enable Cannot be fixed here\nFix in Settings",
@@ -1104,21 +1112,17 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
     fun canBackgroundStart(context: Context): Boolean {
         Log.d(TAG, "canBackgroundStart: is called")
         val ops = context.getSystemService(APP_OPS_SERVICE) as AppOpsManager
-        try {
+        return try {
             val op = 10021 // >= 23
             // ops.checkOpNoThrow(op, uid, packageName)
             val method: Method = ops.javaClass.getMethod(
-                "checkOpNoThrow", *arrayOf<Class<*>?>(
-                    Int::class.javaPrimitiveType,
-                    Int::class.javaPrimitiveType,
-                    String::class.java
-                )
+                "checkOpNoThrow", Int::class.javaPrimitiveType, Int::class.javaPrimitiveType, String::class.java
             )
             val result = method.invoke(ops, op, Process.myUid(), context.packageName) as Int
-            return result == AppOpsManager.MODE_ALLOWED
+            result == AppOpsManager.MODE_ALLOWED
         } catch (e: Exception) {
             Log.e(TAG, "not support", e)
-            return true
+            true
         }
         return false
     }

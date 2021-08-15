@@ -3,8 +3,6 @@ package com.rex.lifetracker.view.fragment
 import android.Manifest
 import android.app.Activity
 import android.content.Intent
-import android.graphics.Bitmap
-import android.graphics.drawable.BitmapDrawable
 import android.net.Uri
 import android.os.Bundle
 import android.text.TextUtils
@@ -16,20 +14,18 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
-import coil.ImageLoader
-import coil.request.ImageRequest
-import coil.request.SuccessResult
 import com.bumptech.glide.Glide
 import com.rex.lifetracker.R
 import com.rex.lifetracker.RoomDataBase.LocalDataBase_Entity.PersonalInfo_Entity
 import com.rex.lifetracker.databinding.FragmentProfileBinding
 import com.rex.lifetracker.utils.Constant
+import com.rex.lifetracker.utils.ImageConverter
+import com.rex.lifetracker.utils.LoadingDialog
 import com.rex.lifetracker.viewModel.LocalDataBaseVM.LocalDataBaseViewModel
 import com.theartofdev.edmodo.cropper.CropImage
 import com.theartofdev.edmodo.cropper.CropImageView
 import com.vmadalin.easypermissions.EasyPermissions
 import com.vmadalin.easypermissions.dialogs.SettingsDialog
-import dmax.dialog.SpotsDialog
 import kotlinx.coroutines.launch
 
 
@@ -57,7 +53,7 @@ class Profile : Fragment(R.layout.fragment_profile), EasyPermissions.PermissionC
             override fun handleOnBackPressed() {
                 try {
                     findNavController()?.navigate(R.id.mapsFragment)
-                }catch (e:Exception){
+                } catch (e: Exception) {
                     Log.d(Constant.TAG, "handleOnBackPressed: $e")
                 }
             }
@@ -113,9 +109,16 @@ class Profile : Fragment(R.layout.fragment_profile), EasyPermissions.PermissionC
 
                             localDataBaseViewModel.addUserInfo(
                                 PersonalInfo_Entity(
-                                    0,editprofileFirstName.text.toString(),editprofileLastName.text.toString(),
-                                    userInfo.Deactivate_Time,userInfo.Active_Time,userInfo.Subscription_Pack,userInfo.brought_pack_time
-                                ,userInfo.status,userInfo.User_Email,userInfo.Image
+                                    0,
+                                    editprofileFirstName.text.toString(),
+                                    editprofileLastName.text.toString(),
+                                    userInfo.Deactivate_Time,
+                                    userInfo.Active_Time,
+                                    userInfo.Subscription_Pack,
+                                    userInfo.brought_pack_time,
+                                    userInfo.status,
+                                    userInfo.User_Email,
+                                    userInfo.Image
                                 )
                             )
                             Toast.makeText(
@@ -143,11 +146,8 @@ class Profile : Fragment(R.layout.fragment_profile), EasyPermissions.PermissionC
         userEmail: String,
         imageUri: Uri?
     ) {
-        val dialogue =
-            SpotsDialog.Builder().setContext(requireContext())
-                .setTheme(R.style.Custom)
-                .setCancelable(true).build()
-        dialogue?.show()
+
+        LoadingDialog.loadingDialogStart(requireContext(), R.style.Custom)
         lifecycleScope.launch {
             binding.apply {
                 localDataBaseViewModel.addUserInfo(
@@ -161,14 +161,14 @@ class Profile : Fragment(R.layout.fragment_profile), EasyPermissions.PermissionC
                         broughtPackTime,
                         status,
                         userEmail,
-                        getBitmap(imageUri.toString())
+                        ImageConverter.getBitmap(imageUri.toString(), requireContext())
 
                     )
                 )
 
             }
         }
-        dialogue.dismiss()
+        LoadingDialog.loadingDialogStop()
 
 
     }
@@ -249,17 +249,6 @@ class Profile : Fragment(R.layout.fragment_profile), EasyPermissions.PermissionC
         }
     }
 
-
-    private suspend fun getBitmap(imageUri: String): Bitmap {
-        Log.d(Constant.TAG, "getBitmap: $imageUri")
-        val loading = ImageLoader(requireContext())
-        val request = ImageRequest.Builder(requireContext())
-            .data(imageUri)
-            .build()
-
-        val result = (loading.execute(request) as SuccessResult).drawable
-        return (result as BitmapDrawable).bitmap
-    }
 
     override fun onDestroyView() {
         Log.d(Constant.TAG, "onDestroyView: is called")

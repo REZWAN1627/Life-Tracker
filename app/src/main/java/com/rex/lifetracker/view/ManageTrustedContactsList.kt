@@ -14,6 +14,8 @@ import com.rex.lifetracker.RoomDataBase.LocalDataBase_Entity.SOSContacts_Entity
 import com.rex.lifetracker.adapter.TrustedContactsManageAdapter
 import com.rex.lifetracker.databinding.ActivityManageTrustedContactsListBinding
 import com.rex.lifetracker.utils.Constant.TAG
+import com.rex.lifetracker.utils.ImageConverter
+import com.rex.lifetracker.utils.LoadingDialog
 import com.rex.lifetracker.viewModel.LocalDataBaseVM.LocalDataBaseViewModel
 import com.rex.lifetracker.viewModel.firebaseViewModel.TrustedContactsViewModel
 import dmax.dialog.SpotsDialog
@@ -88,12 +90,9 @@ class ManageTrustedContactsList : AppCompatActivity() {
 
 
     private fun setValue() {
-        val dialogue =
-            SpotsDialog.Builder().setContext(this).setTheme(R.style.Custom)
-                .setCancelable(true).build()
-        dialogue?.show()
+        LoadingDialog.loadingDialogStart(this,R.style.Custom)
         localDataBaseViewModel.readAllContacts?.observe(this, Observer {
-            dialogue.dismiss()
+            LoadingDialog.loadingDialogStop()
             mAdapter.setValue(it)
             Log.e(TAG, "setValue: is called")
 
@@ -115,17 +114,15 @@ class ManageTrustedContactsList : AppCompatActivity() {
     //--------------------upload firebase-------------------//
 
     private fun uploadDataToFireBase(NumberList: List<SOSContacts_Entity>?) {
-        val dialogue =
-            SpotsDialog.Builder().setContext(this).setTheme(R.style.Custom)
-                .setCancelable(true).build()
-        dialogue?.show()
+
+        LoadingDialog.loadingDialogStart(this,R.style.Custom)
 
         val mainJob = CoroutineScope(Dispatchers.IO).launch {
             val job2 = updateWithoutNullPicture(NumberList)
 
         }
         mainJob.invokeOnCompletion {
-            dialogue.dismiss()
+            LoadingDialog.loadingDialogStop()
             Log.d(TAG, "uploadDataToFireBase: done")
             startActivity(
                 Intent(this, MainActivity::class.java).putExtra(
@@ -143,7 +140,7 @@ class ManageTrustedContactsList : AppCompatActivity() {
         if (NumberList!!.isNotEmpty()){
             for (number in NumberList){
                     trustedContactsViewModel.updateDataTOFireBase(
-                        number, getByte(number.Image!!)
+                        number, ImageConverter.getByte(number.Image!!)
                     )
             }
 
@@ -178,16 +175,7 @@ class ManageTrustedContactsList : AppCompatActivity() {
     }
 
 
-    //-----------------image Convert ------------------------//
 
-    private fun getByte(image: Bitmap): ByteArray {
-        Log.d(TAG, "getByte: is called")
-        val baos = ByteArrayOutputStream()
-        val bitmap = image
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos)
-        return baos.toByteArray()
-
-    }
 
 
 }

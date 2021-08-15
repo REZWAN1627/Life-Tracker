@@ -7,11 +7,9 @@ import android.os.Looper
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModelProvider
 import com.github.pwittchen.reactivenetwork.library.rx2.ReactiveNetwork
-import com.rex.lifetracker.RoomDataBase.LocalDataBase_Entity.PersonalInfo_Entity
+
 import com.rex.lifetracker.databinding.ActivitySplashBinding
 import com.rex.lifetracker.utils.Constant.TAG
 import com.rex.lifetracker.viewModel.LocalDataBaseVM.LocalDataBaseViewModel
@@ -19,19 +17,12 @@ import com.rex.lifetracker.viewModel.firebaseViewModel.SignInViewModel
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.Disposable
 import io.reactivex.schedulers.Schedulers
-import java.text.SimpleDateFormat
-import java.util.*
-import java.util.concurrent.TimeUnit
 
 
 class Splash : AppCompatActivity() {
     private lateinit var signInViewModel: SignInViewModel
     private lateinit var binding: ActivitySplashBinding
     private lateinit var localDataBaseViewModel: LocalDataBaseViewModel
-    private lateinit var startDateValue2: Date
-    private val simpleDateFormat: SimpleDateFormat = SimpleDateFormat("dd.MM.yyyy")
-    private val calendar = Calendar.getInstance()
-    private lateinit var endDateValue2: Date
     private var internetDisposable: Disposable? = null
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -89,6 +80,7 @@ class Splash : AppCompatActivity() {
     }
 
     private fun mainActivity() {
+        Log.d(TAG, "mainActivity: is called")
         Handler(Looper.getMainLooper()).postDelayed({
             startActivity(
                 Intent(
@@ -103,7 +95,6 @@ class Splash : AppCompatActivity() {
     }
 
     private fun goToSignInActivity() {
-        //  Log.d(TAG, "goToSignInActivity: is called")
         Handler(Looper.getMainLooper()).postDelayed({
             startActivity(
                 Intent(
@@ -115,9 +106,6 @@ class Splash : AppCompatActivity() {
 
         }, 1000)
     }
-
-
-
 
 
     //---------------------NetWork-------------------//
@@ -133,22 +121,19 @@ class Splash : AppCompatActivity() {
             .subscribe { isConnectedToInternet ->
                 when (isConnectedToInternet) {
                     true -> {
-                        // Log.d(TAG, "onCreate: has internet")
                         checkIfUserIsAuthenticated()
                     }
                     else -> {
-                        //  Log.d(TAG, "onResume: no internet")
                         localDataBaseViewModel.readAllContacts.observe(
                             this,
                             { list ->
-                                //  Log.d(TAG, "localdatabase size -> ${list.size}")
                                 if (list.isEmpty()) {
                                     goToSignInActivity()
 
                                 } else {
                                     if (list.size > 1) {
                                         //trailCalculation()
-                                     mainActivity()
+                                        mainActivity()
 
                                     } else {
                                         goToSignInActivity()

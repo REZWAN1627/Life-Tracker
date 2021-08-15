@@ -19,6 +19,7 @@ import com.google.firebase.auth.GoogleAuthProvider
 import com.rex.lifetracker.R
 import com.rex.lifetracker.databinding.ActivitySignInBinding
 import com.rex.lifetracker.utils.Constant.TAG
+import com.rex.lifetracker.utils.LoadingDialog
 import com.rex.lifetracker.view.userUi.UserInfo
 import com.rex.lifetracker.viewModel.LocalDataBaseVM.LocalDataBaseViewModel
 import com.rex.lifetracker.viewModel.firebaseViewModel.SignInViewModel
@@ -134,14 +135,10 @@ class SignIn : AppCompatActivity() {
 
     private fun signInWithGoogle(authCredential: AuthCredential) {
         signInViewModel.signInWithGoogle(authCredential)
-        val dialogue =
-            SpotsDialog.Builder().setContext(this).setTheme(R.style.SignIn)
-                .setCancelable(false)
-                .build()
-        dialogue?.show()
+        LoadingDialog.loadingDialogStart(this,R.style.SignIn)
         signInViewModel.authenticateUserLiveData!!.observe(this,
             { s ->
-                dialogue?.dismiss()
+                LoadingDialog.loadingDialogStop()
                 Log.d(TAG, "signInWithGoogle: id $s")
                 startActivity(Intent(this, UserInfo::class.java))
                 finish()

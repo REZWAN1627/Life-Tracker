@@ -5,4 +5,199 @@
     <string name="example2">Android software development is the process by which applications are created for devices running the Android operating system</string>
     <string name="example">Android software development is the process by which applications are created for devices running the Android operating system. Google states that "Android apps can be written using Kotlin, Java, and C++ languages" using the Android software development kit, while using other languages is also possible.</string>
     <string name="title_activity_maps">Map</string>
+
+    <string-array name="Sylhet">
+        <item>All over Thana</item>
+        <item>Zakigonj Police Station</item>
+        <item>Kanaighat Police Station</item>
+        <item>Bianibazar Police Station</item>
+        <item>Jaintiapur Police Station</item>
+        <item>Gowainghat Police Station</item>
+        <item>Companigonj Police Station</item>
+        <item>Balaganj Police Station</item>
+        <item>Golapgonj Police Station</item>
+        <item>Fenchuganj Police Station</item>
+        <item>Osmani Nagar Police Station</item>
+        <item>Bisshwanath Police Station</item>
+    </string-array>
+
+    <string-array name="Rajshahi">
+        <item>All over Thana</item>
+        <item>Gourhanga Traffic Police Box</item>
+        <item>Boalia Model Police Station</item>
+        <item>RRF Police station</item>
+        <item>CID Divisional Office, Rajshahi</item>
+        <item>Motihar Police Station</item>
+        <item>Uposhahar Police Fari</item>
+        <item>Railway Police Station Rajshahi</item>
+        <item>Rajshahi Metropoliton Traffic Office</item>
+        <item>Mirzapur Police Fari</item>
+        <item>Rajshahi Metropolitan Police Shilponogori Police Fari</item>
+        <item>DB Office Rajshahi</item>
+        <item>Chandrima Thana</item>
+        <item>Gorhanga Police Station</item>
+        <item>Rajpara police station, Rajshahi</item>
+        <item>Paba Model Police Station</item>
+    </string-array>
+
+    <string-array name="Rangpur">
+        <item>All over Thana</item>
+        <item>Kotwali Police Station</item>
+        <item>Haragach Thana</item>
+        <item>Tazhat Metro Politon Thana</item>
+        <item>Police Bureau Of investivation (PBI) Rangpur District</item>
+        <item>Kaunia Police Station</item>
+        <item>Gangachara Police Station</item>
+        <item>Mahigonj Thana, Rangpur Metropolitan Police</item>
+    </string-array>
+
+    <string-array name="Mymensingh">
+        <item>All over Thana</item>
+        <item>Mymensingh Sadar Police Station</item>
+        <item>Police Super Office Mymensingh</item>
+        <item>Kotwali Model Thana</item>
+        <item>Traffic Police Station</item>
+        <item>GRP POLICE STATION, MYMENSING</item>
+        <item>Muktagacha Police Station</item>
+        <item>Tarakanda Police Station</item>
+        <item>Trishal Police Station</item>
+        <item>Gouripur Police Station</item>
+        <item>Phulpur Police Station</item>
+        <item>Ishwarganj Police Station</item>
+        <item>Ulama randi bazar utarakand police. Mymensingh District</item>
+        <item>Dhobaura Police Station</item>
+        <item>Bhaluka Model Thana</item>
+    </string-array>
+    <string-array name="Barisal">
+        <item>All over Thana</item>
+        <item>আগৈলঝাড়া থানা</item>
+        <item>বানারীপাড়া থানা </item>
+        <item>বাকেরগঞ্জ থানা </item>
+        <item>বরিশাল সদর থানা</item>
+        <item>বাবুগঞ্জ থানা a</item>
+        <item>হিজলা থানা </item>
+        <item>মেহেন্দিগঞ্জ থানা </item>
+        <item>গৌরনদী থানা</item>
+        <item> উজিরপুর থানা</item>
+        <item>কোতোয়ালী থানা </item>
+        <item>কাউনিয়া থানা</item>
+    </string-array>
+
+    <string-array name="Chittagong">
+        <item>All over Thana</item>
+        <item>মীরসরাই থানা</item>
+        <item>মীরসরাই থানা</item>
+        <item>সন্দ্বীপ থানা</item>
+        <item>রাউজান থানা</item>
+        <item>রাঙ্গুনিয়া থানা</item>
+        <item>ফটিকছড়ি থানা</item>
+        <item>ভুজপুর থানা</item>
+        <item>হাটহাজারী থানা</item>
+        <item>পটিয়া থানা</item>
+        <item>আনোয়ারা থানা</item>
+        <item>চন্দনাইশ থানা</item>
+        <item>বোয়ালখালী থানা</item>
+        <item>বাঁশখালী থানা</item>
+        <item>লোহাগাড়া থানা</item>
+        <item>সাতকানিয়া থানা</item>
+        <item>বায়েজিদ থানা</item>
+        <item>পাঁচলাইশ থানা</item>
+        <item>পতেঙ্গা থানা</item>
+        <item>চান্দগাঁও থানা</item>
+        <item> বন্দর থানা</item>
+        <item>হালিশহর থানা</item>
+        <item>কর্ণফুলী থানা</item>
+        <item>খুলশী থানা</item>
+        <item>কোতোয়ালি থানা</item>
+    </string-array>
+
+    <string-array name="Dhaka">
+        <item>All over Thana</item>
+        <item>খিলক্ষেত থানা</item>
+        <item>কাফরুল থানা</item>
+        <item>ধানমন্ডি থানা</item>
+        <item>মোহাম্মদপুর থানা</item>
+        <item>সূত্রাপুর থানা</item>
+        <item>যাত্রাবাড়ী থানা</item>
+        <item>বিমানবন্দর থানা</item>
+        <item>গুলশান থানা</item>
+        <item>উত্তারা পশ্চিম থানা</item>
+        <item>মুগদা থানা</item>
+        <item>রূপনগর থানা</item>
+        <item>ভাষানটেক থানা</item>
+        <item>ভাটারা থানা</item>
+        <item>বনানী থানা</item>
+        <item>ওয়ারী থানা</item>
+        <item>শাহজাহানপুর থানা</item>
+        <item>শেরেবাংলা নগর থানা</item>
+        <item>মিরপুর মডেল থানা</item>
+        <item>দারুস সালাম থানা</item>
+        <item>দক্ষিণখান থানা</item>
+        <item>উত্তরখান থানা</item>
+        <item>তুরাগ থানা</item>
+        <item>উত্তরা মডেল থানা</item>
+        <item>ক্যান্টনমেন্ট থানা</item>
+        <item>বাড্ডা থানা</item>
+        <item>পল্লবী থানা</item>
+        <item>রামপুরা থানা</item>
+        <item>সবুজবাগ থানা</item>
+        <item>কদমতলী থানা</item>
+        <item>চকবাজার থানা</item>
+        <item>কামরাঙ্গীরচর থানা</item>
+        <item>কোতয়ালী থানা</item>
+        <item>লালবাগ থানা</item>
+        <item>কলাবাগান থানা</item>
+        <item>শাহবাগ থানা</item>
+        <item>মতিঝিল থানা</item>
+        <item>খিলগাঁও থানা</item>
+        <item>হাজারীবাগ থানা</item>
+        <item>রমনা মডেল থানা</item>
+        <item>ডেমরা থানা</item>
+        <item>বংশাল থানা</item>
+        <item>নিউমার্কেট থানা</item>
+        <item>গেন্ডারিয়া থানা</item>
+        <item>আদাবর থানা</item>
+    </string-array>
+
+    <string-array name="Khulna">
+        <item>All over Thana</item>
+        <item>কুষ্টিয়া সদর</item>
+        <item>কুমারখালী</item>
+        <item>খোকসা</item>
+        <item> মিরপুর</item>
+        <item>ভেড়ামারা</item>
+        <item>দৌলতপুর</item>
+        <item>রূপসা</item>
+        <item>দিঘলিয়া</item>
+        <item>ফুলতলা</item>
+        <item>ডুমুরিয়া</item>
+        <item>পাইকগাছা</item>
+        <item>কয়রা</item>
+        <item>বাগেরহাট সদর</item>
+        <item>কচুয়া</item>
+        <item>শরণখোলা</item>
+        <item>কলারোয়া</item>
+        <item>আশাশুনি</item>
+        <item>দেবহাটা</item>
+        <item>কালিগঞ্জ</item>
+        <item>শ্যামনগর</item>
+        <item>যশোর সদর</item>
+        <item>বাঘারপাড়া</item>
+        <item>অভয়নগর</item>
+        <item>মনিরামপুর</item>
+        <item>কেশবপুর</item>
+        <item>ঝিকরগাছা</item>
+        <item>চৌগাছা</item>
+        <item>নড়াইল সদর</item>
+        <item>লোহাগড়া</item>
+        <item>কালিয়া</item>
+        <item>মাগুরা সদর</item>
+        <item>ঝিনাইদহ সদর</item>
+        <item>কালীগঞ্জ</item>
+        <item>কোটচাঁদপুর</item>
+        <item>মেহেরপুর সদর</item>
+        <item> গাংনী</item>
+        <item>মুজিবনগর</item>
+    </string-array>
+
 </resources>

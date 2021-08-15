@@ -27,6 +27,7 @@ import com.rex.lifetracker.RoomDataBase.LocalDataBase_Entity.SOSContacts_Entity
 import com.rex.lifetracker.databinding.FragmentAddContactsBinding
 import com.rex.lifetracker.utils.Constant
 import com.rex.lifetracker.utils.Constant.TAG
+import com.rex.lifetracker.utils.ImageConverter
 import com.rex.lifetracker.viewModel.LocalDataBaseVM.LocalDataBaseViewModel
 import com.theartofdev.edmodo.cropper.CropImage
 import com.theartofdev.edmodo.cropper.CropImageView
@@ -101,7 +102,7 @@ class AddContacts : Fragment(R.layout.fragment_add_contacts), EasyPermissions.Pe
                                    contactNumber.text.toString(),
                                    "null",
                                    contactName.text.toString(),
-                                   getBitmap(imageUri.toString())
+                                   ImageConverter.getBitmap(imageUri.toString(),requireContext())
 
 
                                )
@@ -132,7 +133,7 @@ class AddContacts : Fragment(R.layout.fragment_add_contacts), EasyPermissions.Pe
                         contactNumber.text.toString(),
                         "null",
                         contactName.text.toString(),
-                        getBitmap(imageUri.toString())
+                        ImageConverter.getBitmap(imageUri.toString(),requireContext())
                     )
                 )
 
@@ -206,9 +207,7 @@ class AddContacts : Fragment(R.layout.fragment_add_contacts), EasyPermissions.Pe
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        Log.d(AddContacts, "onActivityResult: is called")
         if (requestCode == CropImage.CROP_IMAGE_ACTIVITY_REQUEST_CODE) {
-            Log.d(AddContacts, "onActivityResult: is called")
             val result = CropImage.getActivityResult(data)
             if (resultCode == Activity.RESULT_OK) {
                 binding.apply {
@@ -222,9 +221,6 @@ class AddContacts : Fragment(R.layout.fragment_add_contacts), EasyPermissions.Pe
         }
     }
 
-    companion object {
-        private const val AddContacts = "AddContacts"
-    }
 
 
     private fun closeKeyboard() {
@@ -237,16 +233,7 @@ class AddContacts : Fragment(R.layout.fragment_add_contacts), EasyPermissions.Pe
         }
     }
 
-    private suspend fun getBitmap(imageUri: String): Bitmap {
-        Log.d(TAG, "getBitmap: $imageUri")
-        val loading = ImageLoader(requireContext())
-        val request = ImageRequest.Builder(requireContext())
-            .data(imageUri)
-            .build()
 
-        val result = (loading.execute(request) as SuccessResult).drawable
-        return (result as BitmapDrawable).bitmap
-    }
 
 
 }

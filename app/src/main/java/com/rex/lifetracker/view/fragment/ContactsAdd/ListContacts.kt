@@ -4,7 +4,6 @@ package com.rex.lifetracker.view.fragment.ContactsAdd
 import android.app.Dialog
 import android.content.Intent
 import android.graphics.Bitmap
-import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.ColorDrawable
@@ -15,7 +14,6 @@ import android.view.Window
 import android.widget.Button
 import android.widget.Toast
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
@@ -33,6 +31,8 @@ import com.rex.lifetracker.RoomDataBase.LocalDataBase_Entity.SOSContacts_Entity
 import com.rex.lifetracker.adapter.RecyclerAdapterTrustedContacts
 import com.rex.lifetracker.databinding.FragmentListContactsBinding
 import com.rex.lifetracker.utils.Constant.TAG
+import com.rex.lifetracker.utils.ImageConverter
+import com.rex.lifetracker.utils.LoadingDialog
 import com.rex.lifetracker.view.ManageTrustedContactsList
 import com.rex.lifetracker.viewModel.LocalDataBaseVM.LocalDataBaseViewModel
 import com.rex.lifetracker.viewModel.firebaseViewModel.TrustedContactsViewModel
@@ -93,7 +93,6 @@ class ListContacts : Fragment(R.layout.fragment_list_contacts) {
                     }
                     else -> {
                         if (isInternetConnected) {
-//                            uploadDataToFireBase()
                             showDialog()
                         } else {
                             startActivity(
@@ -169,7 +168,7 @@ class ListContacts : Fragment(R.layout.fragment_list_contacts) {
                 if (NumberList.isNotEmpty()) {
                     for (number in NumberList) {
                         trustedContactsViewModel.updateDataTOFireBase(
-                            number, getByte(number.Image!!)
+                            number, ImageConverter.getByte(number.Image!!)
                         )
                     }
 
@@ -196,7 +195,7 @@ class ListContacts : Fragment(R.layout.fragment_list_contacts) {
 
     private fun offlineSetValue() {
 
-        localDataBaseViewModel.readAllContacts?.observe(viewLifecycleOwner, Observer {
+        localDataBaseViewModel.readAllContacts.observe(viewLifecycleOwner, {
             if (it.isNotEmpty()) {
                 Log.d(TAG, "onViewCreated: ${it.size}")
                 contactExceed = it.size >= 5
@@ -223,10 +222,10 @@ class ListContacts : Fragment(R.layout.fragment_list_contacts) {
         ok.setOnClickListener {
             Log.d(TAG, "showDialog: ok is clicked")
 
-            localDataBaseViewModel.readAllContacts?.observe(
+            localDataBaseViewModel.readAllContacts.observe(
                 viewLifecycleOwner,
                 { NumberList ->
-                    localDataBaseViewModel.readAllCache?.observe(
+                    localDataBaseViewModel.readAllCache.observe(
                         viewLifecycleOwner,
                         { deleteList ->
                             uploadDataToFireBase(deleteList, NumberList)
@@ -283,22 +282,23 @@ class ListContacts : Fragment(R.layout.fragment_list_contacts) {
 
 
                     mAdapter.notifyItemRemoved(viewHolder.adapterPosition)
-                    val dialogue =
-                        SpotsDialog.Builder().setContext(requireContext()).setTheme(R.style.Custom)
-                            .setCancelable(true).build()
-                    dialogue?.show()
-                    localDataBaseViewModel?.readAllContacts?.observe(viewLifecycleOwner, Observer {
+                    LoadingDialog.loadingDialogStart(requireContext(), R.style.Custom)
+                    localDataBaseViewModel.readAllContacts.observe(viewLifecycleOwner, {
                         Log.d(TAG, "onSwiped: current size after delete " + it.size)
                         contactExceed = it.size >= 5
                         contactLessThan = it.size <= 1
                         emptyList = it.isEmpty()
 
-                        dialogue.dismiss()
+                        LoadingDialog.loadingDialogStop()
                         mAdapter.setValue(it)
 
                     })
 
-                    Snackbar.make(binding.allAddedContacts, "This Contacts is deleted "+data.Phone, Snackbar.LENGTH_LONG)
+                    Snackbar.make(
+                        binding.allAddedContacts,
+                        "This Contacts is deleted " + data.Phone,
+                        Snackbar.LENGTH_LONG
+                    )
                         .setAction("Undo") {
                             localDataBaseViewModel.addContacts(data)
                             mAdapter.notifyItemInserted(viewHolder.adapterPosition)
@@ -307,7 +307,7 @@ class ListContacts : Fragment(R.layout.fragment_list_contacts) {
                                     data.Phone
                                 )
                             )
-                            localDataBaseViewModel?.readAllContacts?.observe(
+                            localDataBaseViewModel.readAllContacts.observe(
                                 viewLifecycleOwner,
                                 {
                                     Log.d(TAG, "onSwiped: current size after delete " + it.size)
@@ -315,7 +315,7 @@ class ListContacts : Fragment(R.layout.fragment_list_contacts) {
                                     contactLessThan = it.size <= 1
                                     emptyList = it.isEmpty()
 
-                                    dialogue.dismiss()
+                                    LoadingDialog.loadingDialogStop()
                                     mAdapter.setValue(it)
 
                                 })
@@ -353,13 +353,9 @@ class ListContacts : Fragment(R.layout.fragment_list_contacts) {
                                         totalSizeOnline = onlineList.size
 
                                         lifecycleScope.launch {
-                                            val dialogue =
-                                                SpotsDialog.Builder().setContext(requireContext())
-                                                    .setTheme(R.style.Custom)
-                                                    .setCancelable(true).build()
-                                            dialogue?.show()
-                                            for ((i, model) in onlineList.withIndex()) {
-                                                val image = getBitmap(model.Image)
+                                            LoadingDialog.loadingDialogStart(requireContext(),R.style.Custom)
+                                            for (model in onlineList) {
+                                                val image = ImageConverter.getBitmap(model.Image,requireContext())
                                                 localDataBaseViewModel.addContacts(
                                                     SOSContacts_Entity(
                                                         model.Phone,
@@ -371,15 +367,13 @@ class ListContacts : Fragment(R.layout.fragment_list_contacts) {
 
 
                                             }
-                                            dialogue?.dismiss()
+                                            LoadingDialog.loadingDialogStop()
                                         }
                                     }
 
 
                                 })
 
-
-                        } else {
 
                         }
                     })
@@ -401,23 +395,8 @@ class ListContacts : Fragment(R.layout.fragment_list_contacts) {
     }
 
 
-    private fun getByte(image: Bitmap): ByteArray {
-        Log.d(TAG, "getByte: is called")
-        val baos = ByteArrayOutputStream()
-        image.compress(Bitmap.CompressFormat.JPEG, 100, baos)
-        return baos.toByteArray()
 
-    }
 
-    private suspend fun getBitmap(imageUri: String): Bitmap {
-        val loading = ImageLoader(requireContext())
-        val request = ImageRequest.Builder(requireContext())
-            .data(imageUri)
-            .build()
-
-        val result = (loading.execute(request) as SuccessResult).drawable
-        return (result as BitmapDrawable).bitmap
-    }
 
 
 }

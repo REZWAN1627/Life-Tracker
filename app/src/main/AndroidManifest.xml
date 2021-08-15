@@ -38,9 +38,21 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.LifeTracker"
         android:usesCleartextTraffic="true">
-        <activity android:name=".OfflineMaps.OfflineMaps"></activity>
-        <activity android:name=".view.ManageTrustedContactsList" />
-        <activity android:name=".view.userUi.EditProfile" />
+        <activity
+            android:name=".view.Purchase.Purchase_Package"
+            android:exported="true" />
+        <activity
+            android:name=".Location.experiment"
+            android:exported="true" />
+        <activity
+            android:name=".view.LocalAreaEmergency"
+            android:exported="true" />
+        <activity
+            android:name=".view.EmergencyNumberInLocalArea"
+            android:exported="true" />
+        <activity
+            android:name=".Experiment.activity.experimentActivity"
+            android:exported="true" />
         <!--
              The API key for Google Maps-based APIs is defined as a string resource.
              (See the file "res/values/google_maps_api.xml").
@@ -53,6 +65,9 @@
             android:name="com.google.android.geo.API_KEY"
             android:value="@string/google_maps_key" />
 
+        <activity android:name=".OfflineMaps.OfflineMaps" />
+        <activity android:name=".view.ManageTrustedContactsList" />
+        <activity android:name=".view.userUi.EditProfile" />
         <activity android:name=".view.TrustedNumberDetails" />
         <activity android:name=".view.userUi.UserInfo" />
         <activity android:name=".view.SignIn" />

@@ -4,8 +4,6 @@ import android.Manifest
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
-import android.graphics.Bitmap
-import android.graphics.drawable.BitmapDrawable
 import android.net.Uri
 import android.os.Bundle
 import android.text.TextUtils
@@ -21,22 +19,20 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
-import coil.ImageLoader
-import coil.request.ImageRequest
-import coil.request.SuccessResult
 import com.bumptech.glide.Glide
 import com.rex.lifetracker.R
-import com.rex.lifetracker.RoomDataBase.LocalDataBase_Entity.SOSContacts_Entity
 import com.rex.lifetracker.RoomDataBase.LocalDataBase_Entity.DeleteContactsCacheModel
+import com.rex.lifetracker.RoomDataBase.LocalDataBase_Entity.SOSContacts_Entity
 import com.rex.lifetracker.databinding.FragmentUpdateContactsBinding
 import com.rex.lifetracker.utils.Constant
 import com.rex.lifetracker.utils.Constant.TAG
+import com.rex.lifetracker.utils.ImageConverter
+import com.rex.lifetracker.utils.LoadingDialog
 import com.rex.lifetracker.viewModel.LocalDataBaseVM.LocalDataBaseViewModel
 import com.theartofdev.edmodo.cropper.CropImage
 import com.theartofdev.edmodo.cropper.CropImageView
 import com.vmadalin.easypermissions.EasyPermissions
 import com.vmadalin.easypermissions.dialogs.SettingsDialog
-import dmax.dialog.SpotsDialog
 import kotlinx.coroutines.launch
 
 
@@ -107,14 +103,17 @@ class UpdateContacts : Fragment(R.layout.fragment_update_contacts),
                         if (updatecontactNumber.text.toString() == args.localData.Phone) {
 
 
-                                localDataBaseViewModel.addContacts(
-                                    SOSContacts_Entity(
-                                        updatecontactNumber.text.toString(),
-                                        args.localData.Priority,
-                                        updatecontactName.text.toString(),
-                                        AppCompatResources.getDrawable(requireContext(), R.drawable.defaultimage)!!.toBitmap()
-                                    )
+                            localDataBaseViewModel.addContacts(
+                                SOSContacts_Entity(
+                                    updatecontactNumber.text.toString(),
+                                    args.localData.Priority,
+                                    updatecontactName.text.toString(),
+                                    AppCompatResources.getDrawable(
+                                        requireContext(),
+                                        R.drawable.defaultimage
+                                    )!!.toBitmap()
                                 )
+                            )
 
                             findNavController().navigate(R.id.action_updateContacts_to_listContacts)
                         } else {
@@ -132,14 +131,17 @@ class UpdateContacts : Fragment(R.layout.fragment_update_contacts),
                                 )
                             )
 
-                                localDataBaseViewModel.addContacts(
-                                    SOSContacts_Entity(
-                                        updatecontactNumber.text.toString(),
-                                        "null",
-                                        updatecontactName.text.toString(),
-                                        AppCompatResources.getDrawable(requireContext(), R.drawable.defaultimage)!!.toBitmap()
-                                    )
+                            localDataBaseViewModel.addContacts(
+                                SOSContacts_Entity(
+                                    updatecontactNumber.text.toString(),
+                                    "null",
+                                    updatecontactName.text.toString(),
+                                    AppCompatResources.getDrawable(
+                                        requireContext(),
+                                        R.drawable.defaultimage
+                                    )!!.toBitmap()
                                 )
+                            )
 
                             findNavController().navigate(R.id.action_updateContacts_to_listContacts)
                         }
@@ -158,25 +160,23 @@ class UpdateContacts : Fragment(R.layout.fragment_update_contacts),
     }
 
     private fun setValue() {
-        val dialogue =
-            SpotsDialog.Builder().setContext(requireContext())
-                .setTheme(R.style.LoadingUserInfo)
-                .setCancelable(true).build()
-        dialogue?.show()
+
+
+        LoadingDialog.loadingDialogStart(requireContext(), R.style.LoadingUserInfo)
 
         binding.apply {
 
             updatecontactName.setText(args.localData.Name)
             updatecontactNumber.setText(args.localData.Phone)
-            if (args.localData.Image != null){
-               // updateContactImage.setImageBitmap(args.localData.Image)
-                   Glide.with(requireContext())
-                       .asBitmap()
-                       .load(args.localData.Image)
-                       .placeholder(R.drawable.ic_man)
-                       .into(updateContactImage)
+            if (args.localData.Image != null) {
+                // updateContactImage.setImageBitmap(args.localData.Image)
+                Glide.with(requireContext())
+                    .asBitmap()
+                    .load(args.localData.Image)
+                    .placeholder(R.drawable.ic_man)
+                    .into(updateContactImage)
                 upAddIcon.visibility = View.GONE
-            }else{
+            } else {
                 Glide.with(requireContext())
                     .asBitmap()
                     .load(R.drawable.ic_team)
@@ -186,18 +186,16 @@ class UpdateContacts : Fragment(R.layout.fragment_update_contacts),
 
 
 
-            dialogue?.dismiss()
+            LoadingDialog.loadingDialogStop()
 
         }
 
     }
 
     private fun uploadInDataBase(priority: String) {
-        val dialogue =
-            SpotsDialog.Builder().setContext(requireContext())
-                .setTheme(R.style.Custom)
-                .setCancelable(true).build()
-        dialogue?.show()
+
+
+        LoadingDialog.loadingDialogStart(requireContext(), R.style.Custom)
 
         lifecycleScope.launch {
             binding.apply {
@@ -206,15 +204,14 @@ class UpdateContacts : Fragment(R.layout.fragment_update_contacts),
                         updatecontactNumber.text.toString(),
                         priority,
                         updatecontactName.text.toString(),
-                        getBitmap(imageUri.toString())
+                        ImageConverter.getBitmap(imageUri.toString(), requireContext())
                     )
                 )
 
             }
         }
         findNavController().navigate(R.id.action_updateContacts_to_listContacts)
-        dialogue?.dismiss()
-
+        LoadingDialog.loadingDialogStop()
 
 
     }
@@ -300,13 +297,5 @@ class UpdateContacts : Fragment(R.layout.fragment_update_contacts),
         }
     }
 
-    private suspend fun getBitmap(imageUri: String): Bitmap {
-        val loading = ImageLoader(requireContext())
-        val request = ImageRequest.Builder(requireContext())
-            .data(imageUri)
-            .build()
 
-        val result = (loading.execute(request) as SuccessResult).drawable
-        return (result as BitmapDrawable).bitmap
-    }
 }

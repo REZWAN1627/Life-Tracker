@@ -2,16 +2,12 @@ package com.rex.lifetracker.view.userUi
 
 import android.content.Intent
 import android.graphics.Bitmap
-import android.graphics.drawable.BitmapDrawable
 import android.os.Bundle
 import android.text.TextUtils
 import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProvider
-import coil.ImageLoader
-import coil.request.ImageRequest
-import coil.request.SuccessResult
 import com.bumptech.glide.Glide
 import com.github.pwittchen.reactivenetwork.library.rx2.ReactiveNetwork
 import com.rex.lifetracker.R
@@ -20,18 +16,18 @@ import com.rex.lifetracker.RoomDataBase.LocalDataBase_Entity.SIM_Entity
 import com.rex.lifetracker.databinding.ActivityUserInfoBinding
 import com.rex.lifetracker.model.FireBaseModel.UserInfoModel
 import com.rex.lifetracker.utils.Constant.TAG
+import com.rex.lifetracker.utils.ImageConverter
+import com.rex.lifetracker.utils.LoadingDialog
 import com.rex.lifetracker.view.TrustedNumberDetails
 import com.rex.lifetracker.viewModel.LocalDataBaseVM.LocalDataBaseViewModel
 import com.rex.lifetracker.viewModel.firebaseViewModel.SignInViewModel
 import com.rex.lifetracker.viewModel.firebaseViewModel.SimSlotViewModel
 import com.rex.lifetracker.viewModel.firebaseViewModel.TrustedContactsViewModel
 import com.rex.lifetracker.viewModel.firebaseViewModel.UserInfoViewModel
-import dmax.dialog.SpotsDialog
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.Disposable
 import io.reactivex.schedulers.Schedulers
 import kotlinx.coroutines.*
-import java.io.ByteArrayOutputStream
 import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.TimeUnit
@@ -42,7 +38,7 @@ class UserInfo : AppCompatActivity() {
     private lateinit var signInViewModel: SignInViewModel
     private lateinit var userInfoViewModel: UserInfoViewModel
     private lateinit var trustedContactsViewModel: TrustedContactsViewModel
-    private var After7DaysDate: String? = null
+    private var afterThirtyDays: String? = null
     private var currentDate: String? = null
     private var currentDate2: String? = null
     private val calendar = Calendar.getInstance()
@@ -71,9 +67,7 @@ class UserInfo : AppCompatActivity() {
         formattingDate()
         setInfo()
         simSlot()
-        // populateDataBase()
 
-        // showDialog()
 
         binding.apply {
             next.setOnClickListener {
@@ -162,23 +156,20 @@ class UserInfo : AppCompatActivity() {
         Log.d(TAG, "setInfo: is called")
 
 
-        val dialogue =
-            SpotsDialog.Builder().setContext(this).setTheme(R.style.LoadingUserInfo)
-                .setCancelable(true).build()
-        dialogue?.show()
 
+        LoadingDialog.loadingDialogStart(this,R.style.LoadingUserInfo)
         signInViewModel.collectUserInfoLiveData.observe(this, {
             globalEmail = it.email
             userInfoViewModel.getUserInfoLiveData.observe(this, { user ->
                 if (user != null) {
                     Log.d(TAG, "setInfo: all user info $user")
-                    dialogue?.dismiss()
+                   LoadingDialog.loadingDialogStop()
                     binding.apply {
                         userFirstName.setText(user.first_Name)
                         userLastName.setText(user.last_Name)
                         globalImage = user.avatar_image
                         subsPack = user.subscription_pack.toString()
-                        After7DaysDate = user.deactivate_Time
+                        afterThirtyDays = user.deactivate_Time
                         broughtPack = user.brought_pack_time.toString()
                         val time = trailCalculation(user.deactivate_Time)
                         status = if (time <= 0){
@@ -196,8 +187,8 @@ class UserInfo : AppCompatActivity() {
 
                     }
                 } else {
-                    dialogue?.dismiss()
-                    After7DaysDate = simpleDateFormat.format(calendar.time)
+                    LoadingDialog.loadingDialogStop()
+                    afterThirtyDays = simpleDateFormat.format(calendar.time)
                     globalImage = it.imageUrl
                     globalEmail = it.email
                     binding.apply {
@@ -221,18 +212,15 @@ class UserInfo : AppCompatActivity() {
     ) {
         Log.d(TAG, "insertValue: is called")
 
-        val dialogue =
-            SpotsDialog.Builder().setContext(this).setTheme(R.style.LoadingUserInfo)
-                .setCancelable(true).build()
-        dialogue?.show()
+        LoadingDialog.loadingDialogStart(this,R.style.LoadingUserInfo)
         val job = CoroutineScope(Dispatchers.IO).launch {
             val result =
-                localDataBaseUpload(getBitmap(globalImage), firstName, lastName)
-            val result2 = FirebaseUpload(getByte(getBitmap(globalImage)), firstName, lastName)
+                localDataBaseUpload(ImageConverter.getBitmap(globalImage,this@UserInfo), firstName, lastName)
+            val result2 = FirebaseUpload(ImageConverter.getByte(ImageConverter.getBitmap(globalImage,this@UserInfo)), firstName, lastName)
 
         }
         job.invokeOnCompletion {
-            dialogue.dismiss()
+            LoadingDialog.loadingDialogStop()
             startActivity(Intent(this@UserInfo, TrustedNumberDetails::class.java))
             finish()
         }
@@ -244,7 +232,7 @@ class UserInfo : AppCompatActivity() {
         userInfoViewModel.insert(
             UserInfoModel(
                 currentDate.toString(), "", broughtPack,
-                After7DaysDate.toString(), firstName, lastName, status, subsPack
+                afterThirtyDays.toString(), firstName, lastName, status, subsPack
             ),
             image
         )
@@ -258,7 +246,7 @@ class UserInfo : AppCompatActivity() {
                 0,
                 firstName,
                 lastName,
-                After7DaysDate!!,
+                afterThirtyDays!!,
                 currentDate!!,
                 subsPack,
                 broughtPack,
@@ -270,24 +258,7 @@ class UserInfo : AppCompatActivity() {
 
     }
 
-    private suspend fun getBitmap(imageUri: String): Bitmap {
-        val loading = ImageLoader(this)
-        val request = ImageRequest.Builder(this)
-            .data(imageUri)
-            .build()
 
-        val result = (loading.execute(request) as SuccessResult).drawable
-        return (result as BitmapDrawable).bitmap
-    }
-
-    private fun getByte(image: Bitmap): ByteArray {
-        Log.d(TAG, "getByte: is called")
-        val baos = ByteArrayOutputStream()
-        val bitmap = image
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos)
-        return baos.toByteArray()
-
-    }
 
     override fun onResume() {
         super.onResume()

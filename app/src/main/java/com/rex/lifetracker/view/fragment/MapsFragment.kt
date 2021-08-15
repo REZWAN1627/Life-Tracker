@@ -7,9 +7,12 @@ import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
+import android.location.Address
+import android.location.Geocoder
 import android.location.Location
 import android.os.Bundle
 import android.os.Looper
+import android.util.Log
 import android.view.View
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -23,11 +26,11 @@ import com.rex.lifetracker.databinding.FragmentMapsBinding
 import com.rex.lifetracker.service.MotionDetectService
 import com.rex.lifetracker.service.Polyline
 import com.rex.lifetracker.utils.Constant
+import java.util.*
 
 
 class MapsFragment : Fragment(R.layout.fragment_maps) {
     private var map: GoogleMap? = null
-    private var isTracking = false
     private var pathPoints = mutableListOf<Polyline>()
     private lateinit var binding: FragmentMapsBinding
     // LatLng(4.2105, 101.9758)\
@@ -80,6 +83,7 @@ class MapsFragment : Fragment(R.layout.fragment_maps) {
             }
         }
     }
+
 
     private fun setUserLocationMarker(location: Location) {
         val latLng = LatLng(location.latitude, location.longitude)

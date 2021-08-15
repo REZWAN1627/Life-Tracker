@@ -70,6 +70,42 @@ class UserInfoRepository {
 
 
     }
+    fun insertUserInfoFirebase(user: UserInfoModel): MutableLiveData<String>? {
+        Log.d(TAG, "insertUserInfoFirebase: is called")
+        val insertResultLiveData = MutableLiveData<String>()
+
+        GlobalScope.launch(Dispatchers.IO) {
+            try {
+                Log.d(TAG, "insertUserInfoFirebase: is called in background")
+                    val data = UserInfoModel(
+                        user.active_Time,
+                        user.avatar_image,
+                        user.brought_pack_time,
+                        user.deactivate_Time,
+                        user.first_Name,
+                        user.last_Name,
+                        user.status,
+                        user.subscription_pack
+                    )
+                    firebaseFirestore.set(data).await()
+                    withContext(Dispatchers.IO) {
+                        Log.d(TAG, "insertUserInfoFirebase: is done")
+                        insertResultLiveData.postValue("Insert Successfully")
+                    }
+
+
+
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    Log.d(TAG, "insertUserInfoFirebase: exception happen ${e.message}")
+                    insertResultLiveData.postValue("failed")
+                }
+            }
+        }
+        return insertResultLiveData
+
+
+    }
 
     fun getUserInfoFromDataBase(): MutableLiveData<UserInfoModel?> {
 

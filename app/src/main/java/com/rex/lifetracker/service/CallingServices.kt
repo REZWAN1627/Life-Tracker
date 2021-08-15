@@ -8,6 +8,7 @@ import android.database.Cursor
 import android.location.Location
 import android.media.RingtoneManager
 import android.net.Uri
+import android.os.Build
 import android.provider.CallLog
 import android.telecom.PhoneAccountHandle
 import android.telecom.TelecomManager
@@ -16,6 +17,7 @@ import android.telephony.SmsManager
 import android.telephony.SubscriptionManager
 import android.telephony.TelephonyManager
 import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
 import androidx.lifecycle.LifecycleService
 import com.google.android.gms.location.FusedLocationProviderClient
@@ -119,6 +121,7 @@ class CallingServices : LifecycleService() {
     }
 
 
+    @RequiresApi(Build.VERSION_CODES.Q)
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         ForeGroundStart()
 
@@ -127,6 +130,7 @@ class CallingServices : LifecycleService() {
     }
 
 
+    @RequiresApi(Build.VERSION_CODES.Q)
     private fun ForeGroundStart() {
         localDataBaseViewModel = LocalDataBaseViewModel(this.application)
         arrangeArrayList()
@@ -234,6 +238,7 @@ class CallingServices : LifecycleService() {
         })
     }
 
+    @RequiresApi(Build.VERSION_CODES.Q)
     private fun checkSimSlot() {
 
         localDataBaseViewModel.readAllSIMSlot.observe(this, {
@@ -304,7 +309,7 @@ class CallingServices : LifecycleService() {
 
         if (simSlotFlag) {
             //  Log.e(Constant.TAG, "makePhoneCall: has sim slot")
-            var phoneAccountHandleList: List<PhoneAccountHandle?> = emptyList()
+            var phoneAccountHandleList: List<PhoneAccountHandle?>
             val item = simSlotNumber // 0 for sim1 & 1 for sim2
 
             val simSlotName = arrayOf(
@@ -373,7 +378,7 @@ class CallingServices : LifecycleService() {
 
 
     private fun getLastCallDuration(): Int {
-        var duration: Int
+        val duration: Int
         val cur: Cursor? = contentResolver.query(
             CallLog.Calls.CONTENT_URI,
             null, null, null, CallLog.Calls.DATE + " DESC limit 1;"

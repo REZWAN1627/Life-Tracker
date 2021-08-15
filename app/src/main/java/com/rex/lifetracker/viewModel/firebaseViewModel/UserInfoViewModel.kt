@@ -17,6 +17,9 @@ class UserInfoViewModel(application: Application) : AndroidViewModel(application
     fun insert(userinfo: UserInfoModel,image: ByteArray?) {
         insertResultLiveData = userInfoRepository.insertUserInfoFirebase(userinfo,image)
     }
+    fun insert(userinfo: UserInfoModel) {
+        insertResultLiveData = userInfoRepository.insertUserInfoFirebase(userinfo)
+    }
 
 
 }
