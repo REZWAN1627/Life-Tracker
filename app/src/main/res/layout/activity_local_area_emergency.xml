@@ -7,11 +7,22 @@
     android:orientation="vertical"
     tools:context=".view.LocalAreaEmergency">
 
-    <Spinner
-        android:entries="@array/Sylhet"
-        android:id="@+id/spinner"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
+    <Space
+        android:layout_width="0dp"
+        android:layout_height="@dimen/_20sdp"/>
+
+    <RelativeLayout
+        android:layout_gravity="center"
+        android:layout_width="@dimen/_250sdp"
+        android:layout_height="@dimen/_50sdp"
+        android:background="@drawable/shape_box_spinner">
+        <Spinner
+            android:layout_centerInParent="true"
+            android:entries="@array/Sylhet"
+            android:id="@+id/spinner"
+            android:layout_width="@dimen/_180sdp"
+            android:layout_height="@dimen/_40sdp" />
+    </RelativeLayout>
     <Space
         android:layout_width="0dp"
         android:layout_height="@dimen/_10sdp"/>

@@ -6,6 +6,27 @@
     android:orientation="vertical"
     android:layout_height="match_parent"
     tools:context=".view.Purchase.Purchase_Package">
+    <Space
+        android:layout_width="0dp"
+        android:layout_height="@dimen/_10sdp"/>
+
+    <de.hdodenhof.circleimageview.CircleImageView
+        android:id="@+id/trusted_image"
+        android:layout_width="@dimen/_150sdp"
+        android:layout_height="@dimen/_150sdp"
+        android:layout_gravity="center"
+        android:src="@drawable/locationimage"
+        app:civ_border_color="#E62954"
+        app:civ_border_width="@dimen/_2sdp"
+        app:civ_circle_background_color="@color/white"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.16000003" />
+    <Space
+        android:layout_width="0dp"
+        android:layout_height="@dimen/_10sdp"/>
 
     <TextView
         android:padding="@dimen/_10sdp"

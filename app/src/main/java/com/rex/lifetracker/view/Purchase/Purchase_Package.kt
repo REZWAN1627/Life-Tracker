@@ -60,32 +60,53 @@ class Purchase_Package : AppCompatActivity() {
         setDetails(intentPackageName)
 
         binding.apply {
-            purchaseBtn.setOnClickListener {
-                if (TextUtils.isEmpty(referenceNumber.text.toString())) {
-                    referenceNumber.error = "Empty Field"
-                    return@setOnClickListener
-                } else {
-                    
-                    if(isInternetConnected){
-                        updatePackageToDataBase(referenceNumber.text.toString())
-                        updatePackageToLocalDataBase()
-                    }else{
-                        Toast.makeText(
-                            this@Purchase_Package,
-                            "You Cannot Purchase package Without Internet",
-                            Toast.LENGTH_SHORT
-                        ).show()
+          appsInformationViewModel.getAppsInformationLiveData.observe(this@Purchase_Package,{app->
+              purchaseBtn.setOnClickListener {
+                  if (TextUtils.isEmpty(referenceNumber.text.toString())) {
+                      referenceNumber.error = "Empty Field"
+                      return@setOnClickListener
+                  } else {
 
-                        return@setOnClickListener
-                    }
-                  
-                    
-                }
-            }
+                      if(isInternetConnected){
+                          when(intentPackageName){
+                              "OneMonth"->{
+                                  updatePackageToDataBase(referenceNumber.text.toString(),
+                                      app?.oneMonthPackModel?.description.toString()
+                                  )
+                                  updatePackageToLocalDataBase(app?.oneMonthPackModel?.description.toString())
+                              }
+                              "SixMonth"->{
+                                  updatePackageToDataBase(referenceNumber.text.toString(),
+                                      app?.sixMonthPackModel?.description.toString()
+                                  )
+                                  updatePackageToLocalDataBase(app?.sixMonthPackModel?.description.toString())
+                              }
+                              "TwelveMonth"->{
+                                  updatePackageToDataBase(referenceNumber.text.toString(),
+                                      app?.twelveMonthPackModel?.description.toString()
+                                  )
+                                  updatePackageToLocalDataBase(app?.twelveMonthPackModel?.description.toString())
+                              }
+                          }
+
+                      }else{
+                          Toast.makeText(
+                              this@Purchase_Package,
+                              "You Cannot Purchase package Without Internet",
+                              Toast.LENGTH_SHORT
+                          ).show()
+
+                          return@setOnClickListener
+                      }
+
+
+                  }
+              }
+          })
         }
     }
 
-    private fun updatePackageToLocalDataBase() {
+    private fun updatePackageToLocalDataBase(description: String) {
         localDataBaseViewModel.realAllUserInfo.observe(this, { info ->
 
             localDataBaseViewModel.addUserInfo(
@@ -95,7 +116,7 @@ class Purchase_Package : AppCompatActivity() {
                     info.Last_Name,
                     afterThirtyDays,
                     currentDate,
-                    "$intentPackageName package",
+                    "$description",
                     broughtPack,
                     status,
                     info.User_Email,
@@ -106,7 +127,7 @@ class Purchase_Package : AppCompatActivity() {
 
     }
 
-    private fun updatePackageToDataBase(reference: String) {
+    private fun updatePackageToDataBase(reference: String, description: String) {
         LoadingDialog.loadingDialogStart(this@Purchase_Package,R.style.Purchase)
         val data = PurchaseModel(
             firebaseAuth?.email.toString(),
@@ -114,13 +135,13 @@ class Purchase_Package : AppCompatActivity() {
             reference,
             "$namePackage $plan $cost"
         )
-        purchaseViewModel.insertData(data, intentPackageName)
+        purchaseViewModel.insertData(data, description)
 
         userInfoViewModel.getUserInfoLiveData.observe(this, { info ->
             LoadingDialog.loadingDialogStop()
             userInfoViewModel.insert(
                 UserInfoModel(currentDate, info?.avatar_image.toString(),
-                    broughtPack, afterThirtyDays, info?.first_Name.toString(), info?.last_Name.toString(), status, "$intentPackageName package"),
+                    broughtPack, afterThirtyDays, info?.first_Name.toString(), info?.last_Name.toString(), status, "$description"),
             )
             
             startActivity(Intent(this,MainActivity::class.java))
@@ -157,29 +178,29 @@ class Purchase_Package : AppCompatActivity() {
 
     private fun oneMonthPlane(oneMonthPackModel: One_Month_Pack_Model?) {
         binding.apply {
-            plan = oneMonthPackModel?.days + " Days Plan"
+           // plan ="30 Days Plan"
             cost = "BDT " + oneMonthPackModel?.cost
             namePackage = "1 Month Plan Package"
-            PackageDetails.text = "$namePackage \n $plan \n $cost"
+            PackageDetails.text = "$namePackage\n$cost"
 
         }
     }
 
     private fun sixMonthPlane(sixMonthPackModel: Six_Month_Pack_Model?) {
         binding.apply {
-            plan = sixMonthPackModel?.days + " Days Plan"
+           // plan = sixMonthPackModel?.days + " Days Plan"
             cost = "BDT " + sixMonthPackModel?.cost
             namePackage = "6 Month Plan Package"
-            PackageDetails.text = "$namePackage \n $plan \n $cost"
+            PackageDetails.text = "$namePackage\n$cost"
         }
     }
 
     private fun twelveMonthPlan(twelveMonthPackModel: Twelve_Month_Pack_Model?) {
         binding.apply {
-            plan = twelveMonthPackModel?.days + " Days Plan"
+          //  plan = twelveMonthPackModel?.days + " Days Plan"
             cost = "BDT " + twelveMonthPackModel?.cost
             namePackage = "12 Month Plan Package"
-            PackageDetails.text = "$namePackage \n $plan \n $cost"
+            PackageDetails.text = "$namePackage\n$cost"
         }
     }
 

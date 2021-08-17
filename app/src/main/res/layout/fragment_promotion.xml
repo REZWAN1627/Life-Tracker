@@ -33,7 +33,7 @@
                     android:id="@+id/oneMonth"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="30 Days Plan"
+                    tools:text="1 Month Plan"
                     android:textColor="@color/white"
                     android:textSize="@dimen/_16ssp"
                     android:textStyle="bold" />
@@ -122,7 +122,7 @@
                     android:id="@+id/sixMonthDays"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="30 Days Plan"
+                    tools:text="6 Month Plan"
                     android:textColor="@color/white"
                     android:textSize="@dimen/_16ssp"
                     android:textStyle="bold" />
@@ -211,7 +211,7 @@
                     android:id="@+id/twelveMonthPlan"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="30 Days Plan"
+                    tools:text="12 Month Plan"
                     android:textColor="@color/white"
                     android:textSize="@dimen/_16ssp"
                     android:textStyle="bold" />

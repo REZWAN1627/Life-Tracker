@@ -72,7 +72,7 @@ class Promotion : Fragment(R.layout.fragment_promotion) {
 
     private fun twelveMonthPlan(twelveMonthPackModel: Twelve_Month_Pack_Model?) {
         binding.apply {
-            twelveMonthPlan.text = twelveMonthPackModel?.days + " Days Plan"
+            twelveMonthPlan.text = "${twelveMonthPackModel?.days} Days Plan"
             twelveMonthPlanCost.text = "BDT " + twelveMonthPackModel?.cost
         }
     }

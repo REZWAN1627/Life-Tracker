@@ -102,7 +102,7 @@
 
                     <TextView
                         android:id="@+id/packageName"
-                        android:layout_width="wrap_content"
+                        android:layout_width="@dimen/_80sdp"
                         android:layout_height="wrap_content"
                         android:layout_gravity="center"
                         android:text="Trail Pack"

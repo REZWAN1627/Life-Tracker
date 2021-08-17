@@ -1,5 +1,8 @@
 package com.rex.lifetracker.view.fragment.notificationTabItem
 
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.view.View
 import androidx.activity.OnBackPressedCallback
@@ -26,8 +29,19 @@ class Information : Fragment(R.layout.fragment_information) {
         appsInformationViewModel.getAppsInformationLiveData.observe(viewLifecycleOwner,{
             binding.apply {
                 about.text = it?.informationModel?.about
+                helpCall.setOnClickListener {
+                    callNumber("01886271808")
+                }
+
             }
         })
+    }
+
+    private fun callNumber(number: String) {
+        val intent =
+            Intent(Intent.ACTION_CALL).setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        intent.data = Uri.parse("tel:$number")
+        startActivity(intent)
     }
 
 
