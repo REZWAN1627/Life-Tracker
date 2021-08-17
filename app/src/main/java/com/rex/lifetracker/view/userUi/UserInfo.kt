@@ -20,10 +20,7 @@ import com.rex.lifetracker.utils.ImageConverter
 import com.rex.lifetracker.utils.LoadingDialog
 import com.rex.lifetracker.view.TrustedNumberDetails
 import com.rex.lifetracker.viewModel.LocalDataBaseVM.LocalDataBaseViewModel
-import com.rex.lifetracker.viewModel.firebaseViewModel.SignInViewModel
-import com.rex.lifetracker.viewModel.firebaseViewModel.SimSlotViewModel
-import com.rex.lifetracker.viewModel.firebaseViewModel.TrustedContactsViewModel
-import com.rex.lifetracker.viewModel.firebaseViewModel.UserInfoViewModel
+import com.rex.lifetracker.viewModel.firebaseViewModel.*
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.Disposable
 import io.reactivex.schedulers.Schedulers
@@ -38,6 +35,7 @@ class UserInfo : AppCompatActivity() {
     private lateinit var signInViewModel: SignInViewModel
     private lateinit var userInfoViewModel: UserInfoViewModel
     private lateinit var trustedContactsViewModel: TrustedContactsViewModel
+    private lateinit var downloadXLViewModel:DownloadXLViewModel
     private var afterThirtyDays: String? = null
     private var currentDate: String? = null
     private var currentDate2: String? = null
@@ -147,6 +145,10 @@ class UserInfo : AppCompatActivity() {
             SignInViewModel::class.java
         )
         simSlotViewModel = ViewModelProvider(this).get(SimSlotViewModel::class.java)
+
+        downloadXLViewModel = ViewModelProvider(this).get(DownloadXLViewModel::class.java)
+
+        downloadXLViewModel.downloadXLSheet(this)
 
     }
 

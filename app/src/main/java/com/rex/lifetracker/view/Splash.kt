@@ -11,6 +11,7 @@ import androidx.lifecycle.ViewModelProvider
 import com.github.pwittchen.reactivenetwork.library.rx2.ReactiveNetwork
 
 import com.rex.lifetracker.databinding.ActivitySplashBinding
+
 import com.rex.lifetracker.utils.Constant.TAG
 import com.rex.lifetracker.viewModel.LocalDataBaseVM.LocalDataBaseViewModel
 import com.rex.lifetracker.viewModel.firebaseViewModel.SignInViewModel

@@ -8,6 +8,8 @@ import org.apache.poi.hssf.usermodel.HSSFDateUtil
 import org.apache.poi.ss.usermodel.Cell
 import org.apache.poi.ss.usermodel.CellValue
 import org.apache.poi.xssf.usermodel.*
+import java.io.File
+import java.io.FileInputStream
 import java.io.InputStream
 import java.text.SimpleDateFormat
 
@@ -15,7 +17,7 @@ object ExcelReader {
     private var tracker = 0
     private var infoList = ArrayList<LocalEmergencyModel>()
     private var valueList = ArrayList<String>()
-    private lateinit var inputStream:InputStream
+    private lateinit var inputStream:FileInputStream
     private lateinit var workbook:XSSFWorkbook
     private lateinit var sheet:XSSFSheet
     private lateinit var formulaEvaluator: XSSFFormulaEvaluator
@@ -23,10 +25,13 @@ object ExcelReader {
     private lateinit var cellValue: CellValue
     fun readxl(context: Context,stateName: String,thana:String): ArrayList<LocalEmergencyModel> {//file name + thana name
 
+
         try {
-             inputStream = context.assets.open("$stateName.xlsx")
-             workbook = XSSFWorkbook(inputStream)
-             sheet = workbook.getSheetAt(0)
+
+            val file = File(context.getExternalFilesDir("EXCEL"), "$stateName.xlsx")
+            inputStream = FileInputStream(file)
+            workbook = XSSFWorkbook(inputStream)
+            sheet = workbook.getSheetAt(0)
             val rowsCount = sheet.physicalNumberOfRows
             formulaEvaluator = workbook.creationHelper.createFormulaEvaluator()
 
@@ -35,7 +40,6 @@ object ExcelReader {
                 tracker = 0
                 val row = sheet.getRow(r)
                 val cellCount = row.physicalNumberOfCells
-             //   Log.d(TAG, "readxl: cellCount: $cellCount \n")
 
                 while (tracker < cellCount) {
                     val value = getCellAsString(row, tracker, formulaEvaluator)
@@ -57,13 +61,13 @@ object ExcelReader {
                 if (tracker > 0) {
                     infoList.add(
                         LocalEmergencyModel(
-                        valueList[0],
+                            valueList[0],
                             valueList[1],
                             valueList[2],
                             valueList[3],
                             valueList[4],
                             valueList[5]
-                    )
+                        )
                     )
                     valueList.clear()
                 }
@@ -71,12 +75,10 @@ object ExcelReader {
 
             return infoList
 
-            //Log.d(TAG, "readExcelData: STRINGBUILDER: $sb")
-         //  Log.d(TAG, "readExcelData: Value List: $infoList")
-
         } catch (e: Exception) {
-            return infoList
             Log.d(TAG, "readxl: exception $e")
+            return infoList
+
         }
     }
     private fun getCellAsString(
