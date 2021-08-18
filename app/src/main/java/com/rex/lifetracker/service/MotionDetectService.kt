@@ -80,7 +80,7 @@ class MotionDetectService : LifecycleService(), SensorEventListener, LifecycleOb
     private var accelerationZ: Double = 0.0
 
     //accident threashold
-    private val threshold = 70
+    private val threshold = 75
 
     // Minimum acceleration needed to count as a shake movement
     private val MIN_SHAKE_ACCELERATION = 12
