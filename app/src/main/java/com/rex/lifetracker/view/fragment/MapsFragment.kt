@@ -57,8 +57,12 @@ class MapsFragment : Fragment(R.layout.fragment_maps), OnMapReadyCallback,
 
             mapView.getMapAsync {
                 map = it
-//                if (map!=null){
-//                    map?.isMyLocationEnabled = true
+//                try {
+//                    if (map!=null){
+//                        map?.isMyLocationEnabled = true
+//                    }
+//                }catch (e:Exception){
+//                    Log.d(TAG, "onViewCreated: exception :$e")
 //                }
 
             }
