@@ -61,8 +61,6 @@ import kotlin.math.roundToInt
 import kotlin.math.sqrt
 
 
-typealias Polyline = MutableList<LatLng>
-typealias Polylines = MutableList<Polyline>
 
 class MotionDetectService : LifecycleService(), SensorEventListener, LifecycleObserver{
     //detect apps forground and background state
@@ -122,17 +120,11 @@ class MotionDetectService : LifecycleService(), SensorEventListener, LifecycleOb
 
 
     companion object {
-        val isTracking = MutableLiveData<Boolean>()
-        val pathPoints = MutableLiveData<Polylines>()
+
         val uiChange = MutableLiveData<UIChange>()
 
     }
 
-    private fun postInitialValues() {
-        isTracking.postValue(false)
-        pathPoints.postValue(mutableListOf())
-
-    }
 
     override fun onCreate() {
         super.onCreate()
@@ -141,13 +133,6 @@ class MotionDetectService : LifecycleService(), SensorEventListener, LifecycleOb
         sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
         sensor = sensorManager?.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
         notificationManager = NotificationManagerCompat.from(this)
-        postInitialValues()
-        fusedLocationProviderClient = FusedLocationProviderClient(this)
-        isTracking.observe(this, Observer {
-            //  Log.d(TAG, "onCreate: value of tracking: $it")
-            updateLocationTracking(it)
-        })
-
         volumeButtonPressed()
 
 
@@ -192,71 +177,7 @@ class MotionDetectService : LifecycleService(), SensorEventListener, LifecycleOb
         mediaSession!!.isActive = true
     }
 
-    //-------------------google map lines-------------------------------//
-    @SuppressLint("MissingPermission")
-    private fun updateLocationTracking(isTracking: Boolean) {
-        //   Log.d(TAG, "updateLocationTracking: is called")
-        if (isTracking) {
-            //   Log.d(TAG, "updateLocationTracking: is in")
-            if (Permission.hasLocationPermissions(this)) {
-                //       Log.d(TAG, "updateLocationTracking: in 2")
-                val request = LocationRequest.create().apply {
-                    interval = LOCATION_UPDATE_INTERVAL
-                    fastestInterval = FASTEST_LOCATION_INTERVAL
-                    priority = PRIORITY_HIGH_ACCURACY
-                }
-                fusedLocationProviderClient.requestLocationUpdates(
-                    request,
-                    locationCallback,
-                    Looper.getMainLooper()
-                )
-//                map?.uiSettings?.isMyLocationButtonEnabled = true
-//                map?.isMyLocationEnabled = true
-            }
-        } else {
-            fusedLocationProviderClient.removeLocationUpdates(locationCallback)
-        }
-    }
 
-    private val locationCallback = object : LocationCallback() {
-        override fun onLocationResult(result: LocationResult?) {
-            super.onLocationResult(result)
-
-
-            if (isTracking.value!!) {
-                //     Log.d(TAG, "onLocationResult: is called")
-                result?.locations?.let { locations ->
-                    for (location in locations) {
-                        addPathPoint(location)
-//                        Log.d(
-//                            TAG,
-//                            "onLocationResult: NEW LOCATION: ${location.latitude}, ${location.longitude}"
-//                        )
-                    }
-                }
-
-            }
-        }
-    }
-
-
-
-    private fun addPathPoint(location: Location?) {
-        location?.let {
-            val pos = LatLng(location.latitude, location.longitude)
-            pathPoints.value?.apply {
-                last().add(pos)
-                pathPoints.postValue(this)
-            }
-        }
-    }
-
-    private fun addEmptyPolyline() = pathPoints.value?.apply {
-        add(mutableListOf())
-        pathPoints.postValue(this)
-    } ?: pathPoints.postValue(mutableListOf(mutableListOf()))
-
-    //---------------------------------Google Map ------------------------//
 
     //-----------sensor--------------------------------------------//
 
@@ -384,7 +305,7 @@ class MotionDetectService : LifecycleService(), SensorEventListener, LifecycleOb
         //   Log.d(TAG, "executeShakeAction: working")
 
         createAlertNotification()
-        fusedLocationProviderClient.removeLocationUpdates(locationCallback)
+      //  fusedLocationProviderClient.removeLocationUpdates(locationCallback)
         stopSelf()
     }
     //--------------------sensor-------------------------//
@@ -405,10 +326,10 @@ class MotionDetectService : LifecycleService(), SensorEventListener, LifecycleOb
                 ACTION_STOP_SERVICE -> {
                     uiChange.postValue(UIChange.END)
                     sensorManager?.unregisterListener(this)
-                    isTracking.postValue(false)
-                    fusedLocationProviderClient.removeLocationUpdates(locationCallback)
+                  //  isTracking.postValue(false)
+                 //   fusedLocationProviderClient.removeLocationUpdates(locationCallback)
                     stopForeground(true)
-                    postInitialValues()
+                  //  postInitialValues()
                     stopSelf()
                 }
 
@@ -423,7 +344,7 @@ class MotionDetectService : LifecycleService(), SensorEventListener, LifecycleOb
     private fun womenSafety() {
         mediaSession!!.isActive = false
         sensorManager?.unregisterListener(this)
-        fusedLocationProviderClient.removeLocationUpdates(locationCallback)
+      //  fusedLocationProviderClient.removeLocationUpdates(locationCallback)
         //
         stopSelf()
 
@@ -474,8 +395,8 @@ class MotionDetectService : LifecycleService(), SensorEventListener, LifecycleOb
 
     private fun ForeGroundStart() {
         sensorManager?.registerListener(this, sensor, SensorManager.SENSOR_DELAY_NORMAL)
-        addEmptyPolyline()
-        isTracking.postValue(true)
+       // addEmptyPolyline()
+       // isTracking.postValue(true)
 
 
         val stopService = PendingIntent.getBroadcast(

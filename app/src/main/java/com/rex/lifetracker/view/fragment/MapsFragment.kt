@@ -7,7 +7,6 @@ import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
-import android.location.Address
 import android.location.Geocoder
 import android.location.Location
 import android.os.Bundle
@@ -20,27 +19,26 @@ import androidx.fragment.app.Fragment
 import com.google.android.gms.location.*
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
+import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.model.*
 import com.rex.lifetracker.R
 import com.rex.lifetracker.databinding.FragmentMapsBinding
-import com.rex.lifetracker.service.MotionDetectService
-import com.rex.lifetracker.service.Polyline
-import com.rex.lifetracker.utils.Constant
-import java.util.*
+import com.rex.lifetracker.utils.Constant.ACCESS_LOCATION_REQUEST_CODE
+import com.rex.lifetracker.utils.Constant.TAG
+import java.io.IOException
 
 
-class MapsFragment : Fragment(R.layout.fragment_maps) {
+class MapsFragment : Fragment(R.layout.fragment_maps), OnMapReadyCallback,
+    GoogleMap.OnMapLongClickListener, GoogleMap.OnMarkerDragListener {
     private var map: GoogleMap? = null
     private var pathPoints = mutableListOf<Polyline>()
     private lateinit var binding: FragmentMapsBinding
-    // LatLng(4.2105, 101.9758)\
-    //LatLng(25.0433371, 88.7622475)
-
     var fusedLocationProviderClient: FusedLocationProviderClient? = null
     var locationRequest: LocationRequest? = null
 
     var userLocationMarker: Marker? = null
     var userLocationAccuracyCircle: Circle? = null
+    private var geocoder: Geocoder? = null
 
 
     @SuppressLint("MissingPermission")
@@ -51,8 +49,9 @@ class MapsFragment : Fragment(R.layout.fragment_maps) {
         fusedLocationProviderClient =
             LocationServices.getFusedLocationProviderClient(requireContext())
 
-        locationRequest = LocationRequest.create().setInterval(5000L).setFastestInterval(5000L)
+        locationRequest = LocationRequest.create().setInterval(500).setFastestInterval(500)
             .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
+        geocoder = Geocoder(requireContext())
 
         binding.apply {
 
@@ -61,19 +60,14 @@ class MapsFragment : Fragment(R.layout.fragment_maps) {
 //                if (map!=null){
 //                    map?.isMyLocationEnabled = true
 //                }
-                addAllPolylines()
+
             }
         }
 
 
-
-
-        subscribeToObservers()
-
-
     }
 
-    var locationCallback: LocationCallback = object : LocationCallback() {
+    private var locationCallback: LocationCallback = object : LocationCallback() {
         override fun onLocationResult(locationResult: LocationResult) {
             super.onLocationResult(locationResult)
             // Log.d(TAG, "onLocationResult: location -> $locationResult")
@@ -146,54 +140,54 @@ class MapsFragment : Fragment(R.layout.fragment_maps) {
         fusedLocationProviderClient?.removeLocationUpdates(locationCallback)
     }
 
-    private fun subscribeToObservers() {
+//    private fun subscribeToObservers() {
+//
+//
+//        MotionDetectService.pathPoints.observe(viewLifecycleOwner, {
+//            pathPoints = it
+//            addLatestPolyline()
+//            moveCameraToUser()
+//        })
+//    }
+
+//    private fun moveCameraToUser() {
+//        if (pathPoints.isNotEmpty() && pathPoints.last().isNotEmpty()) {
+//            map?.animateCamera(
+//                CameraUpdateFactory.newLatLngZoom(
+//                    pathPoints.last().last(),
+//                    Constant.MAP_ZOOM
+//                )
+//            )
+//        }
+//    }
+
+//    private fun addAllPolylines() {
+//        for (polyline in pathPoints) {
+//            val polylineOptions = PolylineOptions()
+//                .color(Constant.POLYLINE_COLOR)
+//                .width(Constant.POLYLINE_WIDTH)
+//                .addAll(polyline)
+//            map?.addPolyline(polylineOptions)
+//
+//
+//        }
+//    }
 
 
-        MotionDetectService.pathPoints.observe(viewLifecycleOwner, {
-            pathPoints = it
-            addLatestPolyline()
-            moveCameraToUser()
-        })
-    }
-
-    private fun moveCameraToUser() {
-        if (pathPoints.isNotEmpty() && pathPoints.last().isNotEmpty()) {
-            map?.animateCamera(
-                CameraUpdateFactory.newLatLngZoom(
-                    pathPoints.last().last(),
-                    Constant.MAP_ZOOM
-                )
-            )
-        }
-    }
-
-    private fun addAllPolylines() {
-        for (polyline in pathPoints) {
-            val polylineOptions = PolylineOptions()
-                .color(Constant.POLYLINE_COLOR)
-                .width(Constant.POLYLINE_WIDTH)
-                .addAll(polyline)
-            map?.addPolyline(polylineOptions)
-
-
-        }
-    }
-
-
-    private fun addLatestPolyline() {
-        if (pathPoints.isNotEmpty() && pathPoints.last().size > 1) {
-            val preLastLatLng = pathPoints.last()[pathPoints.last().size - 2]
-            val lastLatLng = pathPoints.last().last()
-            val polylineOptions = PolylineOptions()
-                .color(Constant.POLYLINE_COLOR)
-                .width(Constant.POLYLINE_WIDTH)
-                .add(preLastLatLng)
-                .add(lastLatLng)
-            map?.addPolyline(polylineOptions)
-
-
-        }
-    }
+//    private fun addLatestPolyline() {
+//        if (pathPoints.isNotEmpty() && pathPoints.last().size > 1) {
+//            val preLastLatLng = pathPoints.last()[pathPoints.last().size - 2]
+//            val lastLatLng = pathPoints.last().last()
+//            val polylineOptions = PolylineOptions()
+//                .color(Constant.POLYLINE_COLOR)
+//                .width(Constant.POLYLINE_WIDTH)
+//                .add(preLastLatLng)
+//                .add(lastLatLng)
+//            map?.addPolyline(polylineOptions)
+//
+//
+//        }
+//    }
 
 
     private fun bitmapDescriptorFromVector(context: Context, vectorResId: Int): BitmapDescriptor? {
@@ -214,8 +208,16 @@ class MapsFragment : Fragment(R.layout.fragment_maps) {
 
     override fun onStart() {
         super.onStart()
-        startLocationUpdates()
         binding.mapView?.onStart()
+        if (ContextCompat.checkSelfPermission(
+                requireContext(),
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
+            startLocationUpdates()
+        } else {
+            // you need to request permissions...
+        }
     }
 
     override fun onStop() {
@@ -237,6 +239,114 @@ class MapsFragment : Fragment(R.layout.fragment_maps) {
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         binding.mapView?.onSaveInstanceState(outState)
+    }
+
+    override fun onMapReady(googleMap: GoogleMap) {
+        map = googleMap
+
+        map!!.mapType = GoogleMap.MAP_TYPE_NORMAL
+
+        map!!.setOnMapLongClickListener(this)
+        map!!.setOnMarkerDragListener(this)
+
+        if (ContextCompat.checkSelfPermission(
+                requireContext(),
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
+        } else {
+            ActivityCompat.requestPermissions(
+                requireActivity(),
+                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
+                ACCESS_LOCATION_REQUEST_CODE
+            )
+        }
+
+
+        try {
+            val addresses = geocoder!!.getFromLocationName("london", 1)
+            if (addresses.size > 0) {
+                val address = addresses[0]
+                val london = LatLng(address.latitude, address.longitude)
+                val markerOptions = MarkerOptions()
+                    .position(london)
+                    .title(address.locality)
+                map!!.addMarker(markerOptions)
+                map!!.moveCamera(CameraUpdateFactory.newLatLngZoom(london, 16f))
+            }
+        } catch (e: IOException) {
+            e.printStackTrace()
+        }
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun enableUserLocation() {
+        map!!.isMyLocationEnabled = true
+    }
+
+    private fun zoomToUserLocation() {
+        @SuppressLint("MissingPermission") val locationTask =
+            fusedLocationProviderClient!!.lastLocation
+        locationTask.addOnSuccessListener { location ->
+            val latLng = LatLng(location.latitude, location.longitude)
+            map!!.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 20f))
+            //                mMap.addMarker(new MarkerOptions().position(latLng));
+        }
+    }
+
+    override fun onMapLongClick(latLng: LatLng) {
+        try {
+            val addresses = geocoder!!.getFromLocation(latLng.latitude, latLng.longitude, 1)
+            if (addresses.size > 0) {
+                val address = addresses[0]
+                val streetAddress = address.getAddressLine(0)
+                map!!.addMarker(
+                    MarkerOptions()
+                        .position(latLng)
+                        .title(streetAddress)
+                        .draggable(true)
+                )
+            }
+        } catch (e: IOException) {
+            e.printStackTrace()
+        }
+    }
+
+    override fun onMarkerDragStart(marker: Marker) {
+        Log.d(TAG, "onMarkerDragStart: ")
+    }
+
+    override fun onMarkerDrag(marker: Marker) {
+        Log.d(TAG, "onMarkerDrag: ")
+    }
+
+    override fun onMarkerDragEnd(marker: Marker) {
+        val latLng = marker.position
+        try {
+            val addresses = geocoder!!.getFromLocation(latLng.latitude, latLng.longitude, 1)
+            if (addresses.size > 0) {
+                val address = addresses[0]
+                val streetAddress = address.getAddressLine(0)
+                marker.title = streetAddress
+            }
+        } catch (e: IOException) {
+            e.printStackTrace()
+        }
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<String?>,
+        grantResults: IntArray
+    ) {
+        if (requestCode == ACCESS_LOCATION_REQUEST_CODE) {
+            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                enableUserLocation()
+                zoomToUserLocation()
+            } else {
+
+            }
+        }
     }
 
 }

@@ -18,7 +18,6 @@
             android:layout_height="wrap_content"
             android:clickable="true"
             android:layout_below="@+id/upperNav"
-            android:layout_alignParentRight="true"
             android:layout_marginRight="@dimen/_10sdp"
             android:layout_marginTop="@dimen/_10sdp"
             app:srcCompat="@drawable/ic_baseline_add_circle_24" />

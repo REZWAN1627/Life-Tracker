@@ -39,6 +39,9 @@
         android:theme="@style/Theme.LifeTracker"
         android:usesCleartextTraffic="true">
         <activity
+            android:name=".Experient.experiment"
+            android:exported="true" />
+        <activity
             android:name=".putFile.PuttingFile"
             android:exported="true" />
         <activity
