@@ -3,6 +3,7 @@ package com.rex.lifetracker.view.Purchase
 import android.content.Intent
 import android.os.Bundle
 import android.text.TextUtils
+import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProvider
@@ -17,6 +18,7 @@ import com.rex.lifetracker.model.FireBaseModel.AppsAdminDataModelPackage.Six_Mon
 import com.rex.lifetracker.model.FireBaseModel.AppsAdminDataModelPackage.Twelve_Month_Pack_Model
 import com.rex.lifetracker.model.FireBaseModel.PurchaseModel.PurchaseModel
 import com.rex.lifetracker.model.FireBaseModel.UserInfoModel
+import com.rex.lifetracker.utils.Constant.TAG
 import com.rex.lifetracker.utils.LoadingDialog
 import com.rex.lifetracker.view.MainActivity
 import com.rex.lifetracker.viewModel.LocalDataBaseVM.LocalDataBaseViewModel
@@ -40,7 +42,7 @@ class Purchase_Package : AppCompatActivity() {
     private var cost = ""
     private var namePackage = ""
     private var intentPackageName = ""
-    private var afterThirtyDays = ""
+    private var afterPackageDays = ""
     private var currentDate = ""
     private var currentDate2 = ""
     private val calendar = Calendar.getInstance()
@@ -55,7 +57,7 @@ class Purchase_Package : AppCompatActivity() {
         binding = ActivityPurchasePackageBinding.inflate(layoutInflater)
         setContentView(binding.root)
         initViewModel()
-        formattingDate()
+
         intentPackageName = intent.getStringExtra("Package").toString()
         setDetails(intentPackageName)
 
@@ -68,24 +70,27 @@ class Purchase_Package : AppCompatActivity() {
                   } else {
 
                       if(isInternetConnected){
-                          when(intentPackageName){
-                              "OneMonth"->{
-                                  updatePackageToDataBase(referenceNumber.text.toString(),
-                                      app?.oneMonthPackModel?.description.toString()
+                          when (intentPackageName) {
+                              "OneMonth" -> {
+                                  formattingDate(
+                                      app?.oneMonthPackModel?.description.toString(),
+                                      referenceNumber.text.toString()
                                   )
-                                  updatePackageToLocalDataBase(app?.oneMonthPackModel?.description.toString())
+
                               }
-                              "SixMonth"->{
-                                  updatePackageToDataBase(referenceNumber.text.toString(),
-                                      app?.sixMonthPackModel?.description.toString()
+                              "SixMonth" -> {
+                                  formattingDate(
+                                      app?.sixMonthPackModel?.description.toString(),
+                                      referenceNumber.text.toString()
                                   )
-                                  updatePackageToLocalDataBase(app?.sixMonthPackModel?.description.toString())
+
                               }
-                              "TwelveMonth"->{
-                                  updatePackageToDataBase(referenceNumber.text.toString(),
-                                      app?.twelveMonthPackModel?.description.toString()
+                              "TwelveMonth" -> {
+                                  formattingDate(
+                                      app?.twelveMonthPackModel?.description.toString(),
+                                      referenceNumber.text.toString()
                                   )
-                                  updatePackageToLocalDataBase(app?.twelveMonthPackModel?.description.toString())
+
                               }
                           }
 
@@ -114,7 +119,7 @@ class Purchase_Package : AppCompatActivity() {
                     info.id,
                     info.First_Name,
                     info.Last_Name,
-                    afterThirtyDays,
+                    afterPackageDays,
                     currentDate,
                     "$description",
                     broughtPack,
@@ -124,6 +129,8 @@ class Purchase_Package : AppCompatActivity() {
                 )
             )
         })
+        startActivity(Intent(this,MainActivity::class.java))
+        finish()
 
     }
 
@@ -141,11 +148,10 @@ class Purchase_Package : AppCompatActivity() {
             LoadingDialog.loadingDialogStop()
             userInfoViewModel.insert(
                 UserInfoModel(currentDate, info?.avatar_image.toString(),
-                    broughtPack, afterThirtyDays, info?.first_Name.toString(), info?.last_Name.toString(), status, "$description"),
+                    broughtPack, afterPackageDays, info?.first_Name.toString(), info?.last_Name.toString(), status, "$description"),
             )
             
-            startActivity(Intent(this,MainActivity::class.java))
-            finish()
+
 
         })
 
@@ -217,15 +223,55 @@ class Purchase_Package : AppCompatActivity() {
             .get(AppsInformationViewModel::class.java)
     }
 
-    private fun formattingDate() {
+    private fun formattingDate(description: String, reference: String) {
+        Log.d(TAG, "formattingDate: $description")
 
-        currentDate = simpleDateFormat.format(calendar.time)
-        currentDate2 = simpleDateFormat2.format(calendar.time)
-        broughtPack = currentDate2 as String
-        calendar.add(Calendar.DATE, 30) // number of days to add
-        afterThirtyDays = simpleDateFormat.format(calendar.time)
+        when (description) {
+            "One Month Pack" -> {
+                currentDate = simpleDateFormat.format(calendar.time)
+                currentDate2 = simpleDateFormat2.format(calendar.time)
+                broughtPack = currentDate2 as String
+                calendar.add(Calendar.DATE, 30) // number of days to add
+                afterPackageDays = simpleDateFormat.format(calendar.time)
+
+                updatePackageToDataBase(
+                    reference,
+                    description
+                )
+                updatePackageToLocalDataBase(description)
+            }
+            "Six Month Pack" -> {
+                currentDate = simpleDateFormat.format(calendar.time)
+                currentDate2 = simpleDateFormat2.format(calendar.time)
+                broughtPack = currentDate2 as String
+                calendar.add(Calendar.DATE, 180) // number of days to add
+                afterPackageDays = simpleDateFormat.format(calendar.time)
+                updatePackageToDataBase(
+                    reference,
+                    description
+                )
+                updatePackageToLocalDataBase(description)
+            }
+            "Twelve Month Pack" -> {
+                currentDate = simpleDateFormat.format(calendar.time)
+                currentDate2 = simpleDateFormat2.format(calendar.time)
+                broughtPack = currentDate2 as String
+                calendar.add(Calendar.DATE, 365) // number of days to add
+                afterPackageDays = simpleDateFormat.format(calendar.time)
+                updatePackageToDataBase(
+                    reference,
+                    description
+                )
+                updatePackageToLocalDataBase(description)
+
+            }
+
+        }
+
 
     }
+
+
 
     override fun onResume() {
         super.onResume()

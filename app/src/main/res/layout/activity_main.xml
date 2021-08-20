@@ -76,9 +76,10 @@
                             android:textStyle="bold" />
 
                         <TextView
+                            android:id="@+id/daysCounter"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="/30 Days"
+                            tools:text="/30 Days"
                             android:textColor="@color/black" />
 
                     </LinearLayout>

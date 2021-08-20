@@ -167,13 +167,17 @@ class UserInfo : AppCompatActivity() {
                     Log.d(TAG, "setInfo: all user info $user")
                    LoadingDialog.loadingDialogStop()
                     binding.apply {
+                        val time = trailCalculation(user.deactivate_Time)
                         userFirstName.setText(user.first_Name)
                         userLastName.setText(user.last_Name)
                         globalImage = user.avatar_image
-                        subsPack = user.subscription_pack.toString()
+                        subsPack = if (time <= 0) {
+                            "Trail Version"
+                        } else {
+                            user.subscription_pack.toString()
+                        }
                         afterThirtyDays = user.deactivate_Time
                         broughtPack = user.brought_pack_time.toString()
-                        val time = trailCalculation(user.deactivate_Time)
                         status = if (time <= 0){
                             "END"
                         }else{

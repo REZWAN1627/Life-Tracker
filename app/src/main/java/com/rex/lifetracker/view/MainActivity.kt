@@ -286,7 +286,7 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
                     personalinfoEntity.Last_Name,
                     personalinfoEntity.Deactivate_Time,
                     personalinfoEntity.Active_Time,
-                    personalinfoEntity.Subscription_Pack,
+                    "Trail Version",
                     personalinfoEntity.brought_pack_time,
                     "END",
                     personalinfoEntity.User_Email,
@@ -395,7 +395,7 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
         //checking trail
         localDataBaseViewModel.realAllUserInfo.observe(this, {
             if (it != null) {
-                trailCalculation(userActiveTime, it.Deactivate_Time)
+                trailCalculation(userActiveTime, it.Deactivate_Time, it.Subscription_Pack)
             } else {
 
                 Toast.makeText(this, "reload the apps again", Toast.LENGTH_SHORT).show()
@@ -535,7 +535,7 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
     }
 
 
-    private fun trailCalculation(userActiveTime: String, dueDate: String) {
+    private fun trailCalculation(userActiveTime: String, dueDate: String, pack:String) {
         startDateValue = simpleDateFormat.parse(userActiveTime)
         endDateValue = simpleDateFormat.parse(dueDate)
 
@@ -546,14 +546,57 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
 
         Log.d(TAG, "initViewModel: Time: " + Integer.parseInt(remain))
 
-        binding.apply {
-            trailProgress.max = 100
-            ObjectAnimator.ofInt(trailProgress, "Progress", 4 * (30 - Integer.parseInt(remain)))
-                .setDuration(2000)
-                .start()
-            remainingDays.text = (Integer.parseInt(remain)).toString()
+        when (pack) {
+            "One Month Pack" -> {
+                binding.apply {
+                    trailProgress.max = 100
+                    ObjectAnimator.ofInt(trailProgress, "Progress", 4 * (30 - Integer.parseInt(remain)))
+                        .setDuration(2000)
+                        .start()
+                    remainingDays.text = (Integer.parseInt(remain)).toString()
+                    daysCounter.text = "/30 Days"
+
+                }
+
+            }
+            "Six Month Pack" -> {
+                binding.apply {
+                    trailProgress.max = 100
+                    ObjectAnimator.ofInt(trailProgress, "Progress", 4 * (180 - Integer.parseInt(remain)))
+                        .setDuration(2000)
+                        .start()
+                    remainingDays.text = (Integer.parseInt(remain)).toString()
+                    daysCounter.text = "/180 Days"
+
+                }
+
+            }
+            "Twelve Month Pack" -> {
+                binding.apply {
+                    trailProgress.max = 100
+                    ObjectAnimator.ofInt(trailProgress, "Progress", 4 * (365 - Integer.parseInt(remain)))
+                        .setDuration(2000)
+                        .start()
+                    remainingDays.text = (Integer.parseInt(remain)).toString()
+                    daysCounter.text = "/365 Days"
+
+                }
+            }
+            "Trail Version"->{
+                binding.apply {
+                    trailProgress.max = 100
+                    ObjectAnimator.ofInt(trailProgress, "Progress", 4 * (30 - Integer.parseInt(remain)))
+                        .setDuration(2000)
+                        .start()
+                    remainingDays.text = (Integer.parseInt(remain)).toString()
+                    daysCounter.text = "/30 Days"
+
+                }
+            }
 
         }
+
+
 
     }
 
