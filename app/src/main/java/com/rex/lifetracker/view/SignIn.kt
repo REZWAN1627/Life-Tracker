@@ -139,7 +139,7 @@ class SignIn : AppCompatActivity() {
         signInViewModel.authenticateUserLiveData!!.observe(this,
             { s ->
                 LoadingDialog.loadingDialogStop()
-                Log.d(TAG, "signInWithGoogle: id $s")
+                //Log.d(TAG, "signInWithGoogle: id $s")
                 startActivity(Intent(this, UserInfo::class.java))
                 finish()
             })

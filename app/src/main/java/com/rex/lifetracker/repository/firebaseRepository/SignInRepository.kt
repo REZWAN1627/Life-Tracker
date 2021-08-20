@@ -63,6 +63,7 @@ class SignInRepository {
 
     //firebase sign in with google
     fun firebaseSignInWithGoogle(authCredential: AuthCredential?): MutableLiveData<String>? {
+        Log.d(TAG, "firebaseSignInWithGoogle: $authCredential")
         val authMutableLiveData = MutableLiveData<String>()
         firebaseAuth.signInWithCredential(authCredential!!).addOnSuccessListener {
             val currentUser = firebaseAuth.currentUser

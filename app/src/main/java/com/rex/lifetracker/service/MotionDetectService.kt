@@ -3,52 +3,31 @@ package com.rex.lifetracker.service
 import android.annotation.SuppressLint
 import android.app.Notification
 import android.app.PendingIntent
-import android.content.Context
 import android.content.Intent
-import android.graphics.Bitmap
-import android.graphics.Canvas
-import android.graphics.Color
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
-import android.location.Location
-import android.media.AudioManager
 import android.media.RingtoneManager
 import android.net.Uri
-import android.os.Handler
-import android.os.Looper
 import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
-import androidx.core.content.ContextCompat
-
 import androidx.lifecycle.*
 import androidx.media.VolumeProviderCompat
 import com.google.android.gms.location.FusedLocationProviderClient
-import com.google.android.gms.location.LocationCallback
-import com.google.android.gms.location.LocationRequest
-import com.google.android.gms.location.LocationRequest.PRIORITY_HIGH_ACCURACY
-import com.google.android.gms.location.LocationResult
-import com.google.android.gms.maps.CameraUpdateFactory
-import com.google.android.gms.maps.GoogleMap
-import com.google.android.gms.maps.OnMapReadyCallback
-import com.google.android.gms.maps.model.*
 import com.rex.lifetracker.R
 import com.rex.lifetracker.service.broadcast_receiver.SystemShakeAlert_broadcastReceiver
 import com.rex.lifetracker.utils.Constant.ACTION_START_SERVICE
 import com.rex.lifetracker.utils.Constant.ACTION_STOP_SERVICE
-import com.rex.lifetracker.utils.Constant.ACTION_WOMEN_SAFETY_SERVICE
 import com.rex.lifetracker.utils.Constant.BROADCAST_REQUEST_CODE
 import com.rex.lifetracker.utils.Constant.CANCEL_ACTION
 import com.rex.lifetracker.utils.Constant.CHANNEL_ALERT2_SYSTEM_ID
 import com.rex.lifetracker.utils.Constant.CHANNEL_ALERT_SYSTEM_ID
 import com.rex.lifetracker.utils.Constant.CHANNEL_ID
-import com.rex.lifetracker.utils.Constant.FASTEST_LOCATION_INTERVAL
 import com.rex.lifetracker.utils.Constant.FOREGROUND_NOTIFICATION_ID
-import com.rex.lifetracker.utils.Constant.LOCATION_UPDATE_INTERVAL
 import com.rex.lifetracker.utils.Constant.MOTION_ALERT_SYSTEM_NOTIFICATION_ID
 import com.rex.lifetracker.utils.Constant.MOTION_ALERT_SYSTEM_NOTIFICATION_ID2
 import com.rex.lifetracker.utils.Constant.START_PHONE_SERVICES
@@ -56,17 +35,13 @@ import com.rex.lifetracker.utils.Constant.STOP_SERVICE_ACTION
 import com.rex.lifetracker.utils.Constant.TAG
 import com.rex.lifetracker.utils.Constant.WOMEN_SAFETY_CHANNEL_ID
 import com.rex.lifetracker.utils.Constant.WOMEN_SAFETY_NOTIFICATION_ID
-import com.rex.lifetracker.utils.Permission
 import kotlin.math.roundToInt
 import kotlin.math.sqrt
 
 
-
-class MotionDetectService : LifecycleService(), SensorEventListener, LifecycleObserver{
+class MotionDetectService : LifecycleService(), SensorEventListener, LifecycleObserver {
     //detect apps forground and background state
     var wasInBackground = false
-
-
 
 
     //sensor ans notification
@@ -136,8 +111,6 @@ class MotionDetectService : LifecycleService(), SensorEventListener, LifecycleOb
         volumeButtonPressed()
 
 
-
-
     }
 
     private fun volumeButtonPressed() {
@@ -176,7 +149,6 @@ class MotionDetectService : LifecycleService(), SensorEventListener, LifecycleOb
         mediaSession!!.setPlaybackToRemote(myVolumeProvider)
         mediaSession!!.isActive = true
     }
-
 
 
     //-----------sensor--------------------------------------------//
@@ -305,7 +277,7 @@ class MotionDetectService : LifecycleService(), SensorEventListener, LifecycleOb
         //   Log.d(TAG, "executeShakeAction: working")
 
         createAlertNotification()
-      //  fusedLocationProviderClient.removeLocationUpdates(locationCallback)
+        //  fusedLocationProviderClient.removeLocationUpdates(locationCallback)
         stopSelf()
     }
     //--------------------sensor-------------------------//
@@ -326,10 +298,10 @@ class MotionDetectService : LifecycleService(), SensorEventListener, LifecycleOb
                 ACTION_STOP_SERVICE -> {
                     uiChange.postValue(UIChange.END)
                     sensorManager?.unregisterListener(this)
-                  //  isTracking.postValue(false)
-                 //   fusedLocationProviderClient.removeLocationUpdates(locationCallback)
+                    //  isTracking.postValue(false)
+                    //   fusedLocationProviderClient.removeLocationUpdates(locationCallback)
                     stopForeground(true)
-                  //  postInitialValues()
+                    //  postInitialValues()
                     stopSelf()
                 }
 
@@ -344,7 +316,7 @@ class MotionDetectService : LifecycleService(), SensorEventListener, LifecycleOb
     private fun womenSafety() {
         mediaSession!!.isActive = false
         sensorManager?.unregisterListener(this)
-      //  fusedLocationProviderClient.removeLocationUpdates(locationCallback)
+        //  fusedLocationProviderClient.removeLocationUpdates(locationCallback)
         //
         stopSelf()
 
@@ -395,8 +367,8 @@ class MotionDetectService : LifecycleService(), SensorEventListener, LifecycleOb
 
     private fun ForeGroundStart() {
         sensorManager?.registerListener(this, sensor, SensorManager.SENSOR_DELAY_NORMAL)
-       // addEmptyPolyline()
-       // isTracking.postValue(true)
+        // addEmptyPolyline()
+        // isTracking.postValue(true)
 
 
         val stopService = PendingIntent.getBroadcast(
@@ -535,9 +507,6 @@ class MotionDetectService : LifecycleService(), SensorEventListener, LifecycleOb
         super.onDestroy()
 
     }
-
-
-
 
 
 }
